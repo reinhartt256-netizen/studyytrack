@@ -94,6 +94,14 @@ export default function App() {
               setCurrentUser(user);
               setIsDemoMode(true);
             }}
+            onRegisterUser={(newUser: User) => {
+              handleUpdateDb(prev => ({
+                ...prev,
+                users: [newUser, ...prev.users]
+              }));
+              setCurrentUser(newUser);
+              setIsDemoMode(true);
+            }}
             onEnterDemo={() => setIsDemoMode(true)}
           />
         ) : (

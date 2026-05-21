@@ -7,7 +7,8 @@ export const INITIAL_DATA: DatabaseState = {
       name: "Pak Budi Hermawan, S.Pd.",
       role: "guru",
       email: "budi.hermawan@sekolah.sch.id",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
+      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
+      password: "password123"
     },
     {
       id: "u-siswa-1",
@@ -15,7 +16,8 @@ export const INITIAL_DATA: DatabaseState = {
       role: "siswa",
       email: "rian.aditya@sekolah.sch.id",
       avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&h=150&fit=crop&crop=face",
-      className: "Kelas 10-A IPA"
+      className: "Kelas 10-A IPA",
+      password: "password123"
     },
     {
       id: "u-siswa-2",
@@ -23,7 +25,8 @@ export const INITIAL_DATA: DatabaseState = {
       role: "siswa",
       email: "alya.nabila@sekolah.sch.id",
       avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face",
-      className: "Kelas 10-A IPA"
+      className: "Kelas 10-A IPA",
+      password: "password123"
     },
     {
       id: "u-siswa-3",
@@ -31,7 +34,8 @@ export const INITIAL_DATA: DatabaseState = {
       role: "siswa",
       email: "dimas.pratama@sekolah.sch.id",
       avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face",
-      className: "Kelas 10-A IPA"
+      className: "Kelas 10-A IPA",
+      password: "password123"
     },
     {
       id: "u-parent-1",
@@ -39,7 +43,8 @@ export const INITIAL_DATA: DatabaseState = {
       role: "orangtua",
       email: "siska.aditya@gmail.com",
       avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face",
-      studentId: "u-siswa-1"
+      studentId: "u-siswa-1",
+      password: "password123"
     }
   ],
   classes: [

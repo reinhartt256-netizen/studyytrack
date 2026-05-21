@@ -6,6 +6,7 @@ export interface User {
   role: UserRole;
   email: string;
   avatar: string;
+  password?: string; // credential field
   className?: string; // used for students
   studentId?: string; // used for parents to link to their child
 }
