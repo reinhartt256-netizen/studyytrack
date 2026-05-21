@@ -1,0 +1,122 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile with role access information",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Authenticating user unique string ID" },
+        "name": { "type": "string", "description": "Display name of studytrack user" },
+        "role": { "type": "string", "enum": ["guru", "siswa", "orangtua"] },
+        "email": { "type": "string", "format": "email" },
+        "avatar": { "type": "string", "description": "URL or indicator path of avatar image" },
+        "className": { "type": "string", "description": "Applicable for student role" },
+        "studentId": { "type": "string", "description": "Identifier of the linked child for parent role" }
+      },
+      "required": ["id", "name", "role", "email", "avatar"]
+    },
+    "Class": {
+      "title": "Class",
+      "description": "Information regarding a virtual/digital classroom",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "subject": { "type": "string" },
+        "teacherId": { "type": "string" }
+      },
+      "required": ["id", "name", "subject", "teacherId"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "Homework or practical assignment created by the teacher",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "classId": { "type": "string" },
+        "className": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "dueDate": { "type": "string" },
+        "maxScore": { "type": "number" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "classId", "className", "title", "description", "dueDate", "maxScore", "createdAt"]
+    },
+    "Submission": {
+      "title": "Submission",
+      "description": "A student's answer submission along with the score/feedback",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "taskId": { "type": "string" },
+        "taskTitle": { "type": "string" },
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "submittedAt": { "type": "string" },
+        "content": { "type": "string" },
+        "fileName": { "type": "string" },
+        "status": { "type": "string", "enum": ["submitted", "graded"] },
+        "score": { "type": "number" },
+        "feedback": { "type": "string" }
+      },
+      "required": ["id", "taskId", "taskTitle", "studentId", "studentName", "submittedAt", "content", "status"]
+    },
+    "Attendance": {
+      "title": "Attendance",
+      "description": "Daily student presence logs for classrooms",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "date": { "type": "string", "description": "Format YYYY-MM-DD" },
+        "classId": { "type": "string" },
+        "className": { "type": "string" },
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "status": { "type": "string", "enum": ["hadir", "izin", "sakit", "alfa"] }
+      },
+      "required": ["id", "date", "classId", "className", "studentId", "studentName", "status"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "Push or read notification system alerts",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "isRead": { "type": "boolean" },
+        "type": { "type": "string", "enum": ["task", "grade", "attendance", "announcement"] }
+      },
+      "required": ["id", "userId", "title", "message", "createdAt", "isRead", "type"]
+    }
+  },
+  "firestore": {
+    "users": {
+      "schema": "User",
+      "description": "User profiles collection"
+    },
+    "classes": {
+      "schema": "Class",
+      "description": "School classrooms collection"
+    },
+    "tasks": {
+      "schema": "Task",
+      "description": "Teacher homework and exam duties collection"
+    },
+    "submissions": {
+      "schema": "Submission",
+      "description": "Student homework uploads and gradings collection"
+    },
+    "attendance": {
+      "schema": "Attendance",
+      "description": "Daily school attendance logs collection"
+    },
+    "notifications": {
+      "schema": "Notification",
+      "description": "User notification alerts collection"
+    }
+  }
+}

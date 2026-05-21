@@ -7,37 +7,177 @@ import { TeacherDashboard } from './components/TeacherDashboard';
 import { StudentDashboard } from './components/StudentDashboard';
 import { ParentDashboard } from './components/ParentDashboard';
 
+// Firebase imports
+import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { 
+  collection, 
+  doc, 
+  setDoc, 
+  deleteDoc, 
+  getDocs, 
+  writeBatch, 
+  onSnapshot, 
+  query 
+} from 'firebase/firestore';
+import { db, auth, handleFirestoreError, OperationType } from './firebase';
+
 const STORAGE_KEY = 'studytrack_saas_db';
 
 export default function App() {
-  const [db, setDb] = useState<DatabaseState>(INITIAL_DATA);
+  const [dbState, setDbState] = useState<DatabaseState>(INITIAL_DATA);
   const [currentUser, setCurrentUser] = useState<User>(INITIAL_DATA.users[0]); // Default to Guru
   const [isDemoMode, setIsDemoMode] = useState<boolean>(false); // Start on Landing Hero
+  const [isSeeded, setIsSeeded] = useState<boolean>(false);
+  const [authReady, setAuthReady] = useState<boolean>(false);
 
-  // Load from local storage
+  // 1. Establish Firebase Anonymous Authentication and Session Storage sync
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        setDb(JSON.parse(stored));
+    const unsub = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        console.log("Firebase secure session loaded with UID:", user.uid);
+        setAuthReady(true);
       } else {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_DATA));
+        signInAnonymously(auth)
+          .then(() => {
+            console.log("Firebase secure anonymous session established.");
+          })
+          .catch(err => {
+            console.error("Firebase Anonymous Auth failed", err);
+          });
+      }
+    });
+
+    // Mirror current selected user to storage for session retention if desired
+    try {
+      const savedUser = localStorage.getItem('studytrack_current_user');
+      if (savedUser) {
+        setCurrentUser(JSON.parse(savedUser));
+        setIsDemoMode(true);
       }
     } catch (e) {
-      console.warn("Could not read local storage, using initial mock seed.", e);
+      console.warn("Could not load user session from storage", e);
     }
+
+    return () => unsub();
   }, []);
 
-  // Update central state and persistent storage
+  // 2. Validate connection and seed cloud database if empty
+  useEffect(() => {
+    if (!authReady) return;
+
+    const seedDatabaseIfEmpty = async () => {
+      try {
+        const usersSnap = await getDocs(collection(db, 'users'));
+        if (usersSnap.empty) {
+          console.log("Firestore database is empty. Injecting StudyyTrack core seed models...");
+          const batch = writeBatch(db);
+
+          INITIAL_DATA.users.forEach((item) => {
+            batch.set(doc(db, 'users', item.id), item);
+          });
+          
+          INITIAL_DATA.classes.forEach((item) => {
+            batch.set(doc(db, 'classes', item.id), item);
+          });
+
+          INITIAL_DATA.tasks.forEach((item) => {
+            batch.set(doc(db, 'tasks', item.id), item);
+          });
+
+          INITIAL_DATA.submissions.forEach((item) => {
+            batch.set(doc(db, 'submissions', item.id), item);
+          });
+
+          INITIAL_DATA.attendance.forEach((item) => {
+            batch.set(doc(db, 'attendance', item.id), item);
+          });
+
+          INITIAL_DATA.notifications.forEach((item) => {
+            batch.set(doc(db, 'notifications', item.id), item);
+          });
+
+          await batch.commit();
+          console.log("Seeding process succeeded successfully.");
+        }
+      } catch (err) {
+        console.error("Seeding checks failed: ", err);
+      } finally {
+        setIsSeeded(true);
+      }
+    };
+
+    seedDatabaseIfEmpty();
+  }, [authReady]);
+
+  // 3. Keep application state fully in-sync with Firestore database collections
+  useEffect(() => {
+    if (!authReady) return;
+
+    const collections = ['users', 'classes', 'tasks', 'submissions', 'attendance', 'notifications'] as const;
+    const unsubscribes: (() => void)[] = [];
+
+    collections.forEach((colName) => {
+      const q = query(collection(db, colName));
+      const unsub = onSnapshot(q, (snapshot) => {
+        setDbState(prev => {
+          const updatedList = snapshot.docs.map(snapDoc => snapDoc.data() as any);
+          return {
+            ...prev,
+            [colName]: updatedList
+          };
+        });
+      }, (error) => {
+        handleFirestoreError(error, OperationType.GET, colName);
+      });
+      unsubscribes.push(unsub);
+    });
+
+    return () => {
+      unsubscribes.forEach(unsub => unsub());
+    };
+  }, [authReady]);
+
+  // Update central state and write changes directly to central Firestore collections
   const handleUpdateDb = (updater: (prev: DatabaseState) => DatabaseState) => {
-    setDb(prev => {
+    setDbState(prev => {
       const next = updater(prev);
+      
+      // Async Syncing to Cloud Storage Firestore
+      setTimeout(async () => {
+        try {
+          const collections = ['users', 'classes', 'tasks', 'submissions', 'attendance', 'notifications'] as const;
+          
+          for (const col of collections) {
+            const nextList = next[col] || [];
+            const prevList = prev[col] || [];
+
+            // Add or overwrite documents
+            for (const docObj of nextList) {
+              const prevDoc = prevList.find(d => d.id === docObj.id);
+              if (!prevDoc || JSON.stringify(prevDoc) !== JSON.stringify(docObj)) {
+                await setDoc(doc(db, col, docObj.id), docObj);
+              }
+            }
+
+            // Prune deleted documents
+            for (const docObj of prevList) {
+              const stillExists = nextList.some(d => d.id === docObj.id);
+              if (!stillExists) {
+                await deleteDoc(doc(db, col, docObj.id));
+              }
+            }
+          }
+        } catch (error) {
+          handleFirestoreError(error, OperationType.WRITE, "sync");
+        }
+      }, 0);
+
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       return next;
     });
   };
 
-  // Helper inside App to send notification live
+  // Helper inside App to send notifications
   const sendNotification = (
     userId: string, 
     title: string, 
@@ -62,7 +202,10 @@ export default function App() {
 
   const handleUserChange = (user: User) => {
     setCurrentUser(user);
-    setIsDemoMode(true); // Always enter into custom dashboard when selecting via role selector
+    try {
+      localStorage.setItem('studytrack_current_user', JSON.stringify(user));
+    } catch (_) {}
+    setIsDemoMode(true); // Enter customizable dashboard
   };
 
   return (
@@ -79,9 +222,16 @@ export default function App() {
         <RoleSelector
           currentUser={currentUser}
           onUserChange={handleUserChange}
-          availableUsers={db.users}
+          availableUsers={dbState.users}
           isDemoMode={isDemoMode}
-          setIsDemoMode={setIsDemoMode}
+          setIsDemoMode={(val) => {
+            if (!val) {
+              try {
+                localStorage.removeItem('studytrack_current_user');
+              } catch (_) {}
+            }
+            setIsDemoMode(val);
+          }}
         />
       )}
 
@@ -89,9 +239,12 @@ export default function App() {
       <main className="flex-1">
         {!isDemoMode ? (
           <LandingHero
-            availableUsers={db.users}
+            availableUsers={dbState.users}
             onSelectUser={(user) => {
               setCurrentUser(user);
+              try {
+                localStorage.setItem('studytrack_current_user', JSON.stringify(user));
+              } catch (_) {}
               setIsDemoMode(true);
             }}
             onRegisterUser={(newUser: User) => {
@@ -100,6 +253,9 @@ export default function App() {
                 users: [newUser, ...prev.users]
               }));
               setCurrentUser(newUser);
+              try {
+                localStorage.setItem('studytrack_current_user', JSON.stringify(newUser));
+              } catch (_) {}
               setIsDemoMode(true);
             }}
             onEnterDemo={() => setIsDemoMode(true)}
@@ -108,7 +264,7 @@ export default function App() {
           <div>
             {currentUser.role === 'guru' && (
               <TeacherDashboard
-                db={db}
+                db={dbState}
                 currentUser={currentUser}
                 onUpdateDb={handleUpdateDb}
                 sendNotification={sendNotification}
@@ -117,7 +273,7 @@ export default function App() {
 
             {currentUser.role === 'siswa' && (
               <StudentDashboard
-                db={db}
+                db={dbState}
                 currentUser={currentUser}
                 onUpdateDb={handleUpdateDb}
                 sendNotification={sendNotification}
@@ -126,7 +282,7 @@ export default function App() {
 
             {currentUser.role === 'orangtua' && (
               <ParentDashboard
-                db={db}
+                db={dbState}
                 currentUser={currentUser}
                 onUpdateDb={handleUpdateDb}
               />
