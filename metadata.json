@@ -1,0 +1,8 @@
+{
+  "name": "StudyyTrack",
+  "description": "Aplikasi berbasis Software as a Service (SaaS) yang dirancang untuk membantu institusi pendidikan memantau perkembangan belajar siswa secara digital, mempertemukan Guru, Siswa, dan Orang Tua.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
