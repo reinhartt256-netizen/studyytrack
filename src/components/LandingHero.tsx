@@ -3,7 +3,8 @@ import { User, UserRole } from '../types';
 import { 
   ShieldCheck, User as UserIcon, Heart, BookOpen, 
   CheckCircle, BarChart3, Cloud, Layout, Cpu, Globe, ArrowRight, Check,
-  Lock, Mail, UserPlus, LogIn, AlertCircle, Eye, EyeOff
+  Lock, Mail, UserPlus, LogIn, AlertCircle, Eye, EyeOff,
+  Layers, Clock, Bell, MessageSquare, Award, UserCheck
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import heroImage from '../assets/images/dashboard_hero_1779363123427.png';
@@ -22,6 +23,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
   onEnterDemo
 }) => {
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
+  const [selectedFeatureRole, setSelectedFeatureRole] = useState<'guru' | 'siswa' | 'orangtua'>('guru');
   
   // Login form states
   const [loginEmail, setLoginEmail] = useState('');
@@ -555,43 +557,248 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
       </section>
 
       {/* Product Feature overview */}
-      <section id="fitur" className="py-16 px-6 max-w-7xl mx-auto space-y-12">
+      <section id="fitur" className="py-16 px-6 max-w-7xl mx-auto space-y-12 animate-fade-in">
         <div className="text-center max-w-2xl mx-auto space-y-2">
-          <span className="text-blue-600 text-xs font-bold uppercase tracking-wider">Modul MVP StudyyTrack</span>
-          <h2 className="text-2xl md:text-3xl font-extrabold text-slate-800">Fitur Utama Platform SaaS</h2>
-          <p className="text-slate-500 text-xs">Pencegahan hambatan belajar yang dirancang khusus untuk efisiensi digitalisasi institusi Anda.</p>
+          <span className="text-blue-600 text-xs font-bold uppercase tracking-wider">Direktori Menu Fitur MVP</span>
+          <h2 className="text-2xl md:text-3xl font-extrabold text-slate-800">Uji Coba Modul SaaS Secara Interaktif</h2>
+          <p className="text-slate-500 text-xs text-balance">Klik tab peran di bawah untuk menyaring dan membaca kapabilitas menu platform digitalisasi sekolah yang dirancang khusus bagi setiap peran.</p>
         </div>
- 
+
+        {/* Dynamic Role Tab Buttons */}
+        <div className="flex flex-wrap justify-center gap-3 max-w-3xl mx-auto p-1.5 bg-slate-100/70 border border-slate-200/50 rounded-2xl sm:rounded-full">
+          <button
+            type="button"
+            onClick={() => setSelectedFeatureRole('guru')}
+            className={`flex-1 min-w-[140px] px-5 py-3 text-xs font-extrabold rounded-xl sm:rounded-full transition-all cursor-pointer flex items-center justify-center gap-2 ${
+              selectedFeatureRole === 'guru'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-500/10'
+                : 'text-slate-600 hover:text-slate-900 bg-white/40 hover:bg-white/80'
+            }`}
+          >
+            <ShieldCheck className="w-4 h-4" />
+            <span>Pendidik & Guru</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSelectedFeatureRole('siswa')}
+            className={`flex-1 min-w-[140px] px-5 py-3 text-xs font-extrabold rounded-xl sm:rounded-full transition-all cursor-pointer flex items-center justify-center gap-2 ${
+              selectedFeatureRole === 'siswa'
+                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-500/10'
+                : 'text-slate-600 hover:text-slate-900 bg-white/40 hover:bg-white/80'
+            }`}
+          >
+            <BookOpen className="w-4 h-4" />
+            <span>Siswa Pembelajar</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSelectedFeatureRole('orangtua')}
+            className={`flex-1 min-w-[140px] px-5 py-3 text-xs font-extrabold rounded-xl sm:rounded-full transition-all cursor-pointer flex items-center justify-center gap-2 ${
+              selectedFeatureRole === 'orangtua'
+                ? 'bg-rose-600 text-white shadow-md shadow-rose-500/10'
+                : 'text-slate-600 hover:text-slate-900 bg-white/40 hover:bg-white/80'
+            }`}
+          >
+            <Heart className="w-4 h-4" />
+            <span>Orang Tua / Wali</span>
+          </button>
+        </div>
+
+        {/* Dynamic Display Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white/60 backdrop-blur-md p-6 rounded-3xl border border-white/70 shadow-[0_10px_35px_rgba(0,0,0,0.02)] hover:bg-white/80 hover:scale-[1.02] transition-all duration-300 space-y-3">
-            <div className="bg-blue-50 text-blue-600 p-3 rounded-xl w-12 h-12 flex items-center justify-center border border-blue-100">
-              <Layout className="w-6 h-6" />
-            </div>
-            <h3 className="font-bold text-slate-800 text-base">Dashboard Multi-Peran</h3>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              Tampilan dasbor yang disesuaikan secara khusus bagi Guru (korektor & absensi), Siswa (melihat tugas & kirim berkas), serta Orang Tua (laporan transparan).
-            </p>
-          </div>
- 
-          <div className="bg-white/60 backdrop-blur-md p-6 rounded-3xl border border-white/70 shadow-[0_10px_35px_rgba(0,0,0,0.02)] hover:bg-white/80 hover:scale-[1.02] transition-all duration-300 space-y-3">
-            <div className="bg-emerald-50 text-emerald-600 p-3 rounded-xl w-12 h-12 flex items-center justify-center border border-emerald-100">
-              <BookOpen className="w-6 h-6" />
-            </div>
-            <h3 className="font-bold text-slate-800 text-base">Manajemen Kelas & Tugas</h3>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              Guru berwewenang secara langsung membuat kelas digital baru, mendistribusikan penugasan beserta tenggat waktu, dan melakukan koreksi penilaian digital.
-            </p>
-          </div>
- 
-          <div className="bg-white/60 backdrop-blur-md p-6 rounded-3xl border border-white/70 shadow-[0_10px_35px_rgba(0,0,0,0.02)] hover:bg-white/80 hover:scale-[1.02] transition-all duration-300 space-y-3">
-            <div className="bg-indigo-50 text-indigo-600 p-3 rounded-xl w-12 h-12 flex items-center justify-center border border-indigo-100">
-              <BarChart3 className="w-6 h-6" />
-            </div>
-            <h3 className="font-bold text-slate-800 text-base">Sistem Absensi & Notifikasi</h3>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              Pencatatan presensi digital harian yang informasinya langsung disalurkan menjadi notifikasi instan bagi wali murid pada saat ada ketidakhadiran.
-            </p>
-          </div>
+          {selectedFeatureRole === 'guru' && (
+            <>
+              {/* Feature 1 */}
+              <div className="bg-white/60 backdrop-blur-md p-6 rounded-3xl border border-white/70 shadow-sm hover:bg-white hover:scale-[1.01] transition-all duration-300 space-y-4 flex flex-col justify-between">
+                <div className="space-y-3">
+                  <div className="bg-blue-50 text-blue-600 p-2.5 rounded-xl w-10 h-10 flex items-center justify-center border border-blue-100">
+                    <ShieldCheck className="w-5 h-5" />
+                  </div>
+                  <span className="inline-block text-[10px] bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded-md">
+                    Modul Guru - Penilaian
+                  </span>
+                  <h3 className="font-bold text-slate-800 text-base leading-tight">Sistem Penilaian Rapor Efisien</h3>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Dewan guru dapat meninjau kiriman jawaban dari siswa secara online, langsung memberikan skor penilaian numerik (0-100), serta menyisipkan pesan bimbingan belajar/feedback yang membangun.
+                  </p>
+                </div>
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[10px] font-bold text-slate-500 font-mono">
+                  <span>METODOLOGI: SaaS Standard</span>
+                  <span className="text-blue-600">99.8% Transparansi</span>
+                </div>
+              </div>
+
+              {/* Feature 2 */}
+              <div className="bg-white/60 backdrop-blur-md p-6 rounded-3xl border border-white/70 shadow-sm hover:bg-white hover:scale-[1.01] transition-all duration-300 space-y-4 flex flex-col justify-between">
+                <div className="space-y-3">
+                  <div className="bg-emerald-50 text-emerald-600 p-2.5 rounded-xl w-10 h-10 flex items-center justify-center border border-emerald-100">
+                    <UserCheck className="w-5 h-5" />
+                  </div>
+                  <span className="inline-block text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-md">
+                    Modul Guru - Kehadiran
+                  </span>
+                  <h3 className="font-bold text-slate-800 text-base leading-tight">Presensi Kehadiran Tanpa Berkas</h3>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Satu ketukan responsif untuk merekam kehadiran siswa per hari. Status kehadiran (Hadir, Sakit, Izin, Alfa) langsung disalurkan saat itu juga ke sistem wali murid tanpa perantara kertas.
+                  </p>
+                </div>
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[10px] font-bold text-slate-500 font-mono">
+                  <span>INTEGRASI: Cloud Database</span>
+                  <span className="text-emerald-600">Otomatis Sinkron</span>
+                </div>
+              </div>
+
+              {/* Feature 3 */}
+              <div className="bg-white/60 backdrop-blur-md p-6 rounded-3xl border border-white/70 shadow-sm hover:bg-white hover:scale-[1.01] transition-all duration-300 space-y-4 flex flex-col justify-between">
+                <div className="space-y-3">
+                  <div className="bg-indigo-50 text-indigo-600 p-2.5 rounded-xl w-10 h-10 flex items-center justify-center border border-indigo-100">
+                    <Layers className="w-5 h-5" />
+                  </div>
+                  <span className="inline-block text-[10px] bg-indigo-100 text-indigo-800 font-bold px-2 py-0.5 rounded-md">
+                    Modul Guru - Tugas
+                  </span>
+                  <h3 className="font-bold text-slate-800 text-base leading-tight">Kelola File & Alarm Deadline</h3>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Membuat topik mata pelajaran baru, menentukan deskripsi instruksi pengerjaan, serta menetapkan tanggal jatuh tempo pengerjaan yang ketat demi memicu kedisiplinan belajar.
+                  </p>
+                </div>
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[10px] font-bold text-slate-500 font-mono">
+                  <span>FORMAT: Multi-Tipe Berkas</span>
+                  <span className="text-indigo-600">Reduksi Beban 60%</span>
+                </div>
+              </div>
+            </>
+          )}
+
+          {selectedFeatureRole === 'siswa' && (
+            <>
+              {/* Feature 1 */}
+              <div className="bg-white/60 backdrop-blur-md p-6 rounded-3xl border border-white/70 shadow-sm hover:bg-white hover:scale-[1.01] transition-all duration-300 space-y-4 flex flex-col justify-between">
+                <div className="space-y-3">
+                  <div className="bg-emerald-50 text-emerald-600 p-2.5 rounded-xl w-10 h-10 flex items-center justify-center border border-emerald-100">
+                    <BookOpen className="w-5 h-5" />
+                  </div>
+                  <span className="inline-block text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-md">
+                    Modul Siswa - Unggah
+                  </span>
+                  <h3 className="font-bold text-slate-800 text-base leading-tight">Pengumpulan Berkas Cloud Pintar</h3>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Siswa tidak perlu membawa kertas fisik ke kelas. Cukup unggah jawaban berupa teks daring atau tautan berkas digital di dalam portal StudyyTrack kapan saja sebelum deadline tiba.
+                  </p>
+                </div>
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[10px] font-bold text-slate-500 font-mono">
+                  <span>METRICS: 100% Paperless</span>
+                  <span className="text-emerald-600">Simpan Aman</span>
+                </div>
+              </div>
+
+              {/* Feature 2 */}
+              <div className="bg-white/60 backdrop-blur-md p-6 rounded-3xl border border-white/70 shadow-sm hover:bg-white hover:scale-[1.01] transition-all duration-300 space-y-4 flex flex-col justify-between">
+                <div className="space-y-3">
+                  <div className="bg-amber-50 text-amber-600 p-2.5 rounded-xl w-10 h-10 flex items-center justify-center border border-amber-100">
+                    <Clock className="w-5 h-5" />
+                  </div>
+                  <span className="inline-block text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-md">
+                    Modul Siswa - Pengingat
+                  </span>
+                  <h3 className="font-bold text-slate-800 text-base leading-tight">Alarm Sisa Waktu Tugas</h3>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Sistem akan menyajikan indikator warna yang berubah dinamis saat mendekati jam pengerjaan berakhir. Meminimalisir keterlambatan pengumpulan tugas harian sekolah.
+                  </p>
+                </div>
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[10px] font-bold text-slate-500 font-mono">
+                  <span>ALERT SYSTEM: Alarm Batas</span>
+                  <span className="text-amber-600">Turun Terlambat 85%</span>
+                </div>
+              </div>
+
+              {/* Feature 3 */}
+              <div className="bg-white/60 backdrop-blur-md p-6 rounded-3xl border border-white/70 shadow-sm hover:bg-white hover:scale-[1.01] transition-all duration-300 space-y-4 flex flex-col justify-between">
+                <div className="space-y-3">
+                  <div className="bg-blue-50 text-blue-600 p-2.5 rounded-xl w-10 h-10 flex items-center justify-center border border-blue-100">
+                    <Award className="w-5 h-5" />
+                  </div>
+                  <span className="inline-block text-[10px] bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded-md">
+                    Modul Siswa - Rapor
+                  </span>
+                  <h3 className="font-bold text-slate-800 text-base leading-tight">Laporan Poin & Skor Mandiri</h3>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Akses representatif untuk memantau nilai ulangan harian secara langsung, melihat persentase skor pengumpulan tugas, dan menganalisis perkembangan prestasi mandiri Anda.
+                  </p>
+                </div>
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[10px] font-bold text-slate-500 font-mono">
+                  <span>METODOLOGI: Grafik Nilai</span>
+                  <span className="text-blue-600">Analitik Mandiri</span>
+                </div>
+              </div>
+            </>
+          )}
+
+          {selectedFeatureRole === 'orangtua' && (
+            <>
+              {/* Feature 1 */}
+              <div className="bg-white/60 backdrop-blur-md p-6 rounded-3xl border border-white/70 shadow-sm hover:bg-white hover:scale-[1.01] transition-all duration-300 space-y-4 flex flex-col justify-between">
+                <div className="space-y-3">
+                  <div className="bg-rose-50 text-rose-600 p-2.5 rounded-xl w-10 h-10 flex items-center justify-center border border-rose-100">
+                    <Bell className="w-5 h-5" />
+                  </div>
+                  <span className="inline-block text-[10px] bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded-md">
+                    Modul Wali - Sistem Push
+                  </span>
+                  <h3 className="font-bold text-slate-800 text-base leading-tight">Pemberitahuan Transparan Instan</h3>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Sistem cloud akan memicu notifikasi real-time ke akun orang tua ketika anak terekam tidak masuk sekolah atau pada saat ada hasil korektor nilai ujian baru yang dikeluarkan guru.
+                  </p>
+                </div>
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[10px] font-bold text-slate-500 font-mono">
+                  <span>NOTIFIKASI: Pemicu Instan</span>
+                  <span className="text-rose-600">Sinkronisasi 1 Detik</span>
+                </div>
+              </div>
+
+              {/* Feature 2 */}
+              <div className="bg-white/60 backdrop-blur-md p-6 rounded-3xl border border-white/70 shadow-sm hover:bg-white hover:scale-[1.01] transition-all duration-300 space-y-4 flex flex-col justify-between">
+                <div className="space-y-3">
+                  <div className="bg-emerald-50 text-emerald-600 p-2.5 rounded-xl w-10 h-10 flex items-center justify-center border border-emerald-100">
+                    <Heart className="w-5 h-5" />
+                  </div>
+                  <span className="inline-block text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-md">
+                    Modul Wali - Pantau Nilai
+                  </span>
+                  <h3 className="font-bold text-slate-800 text-base leading-tight">Rapor Kinerja Komprehensif</h3>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Tidak perlu menunggu akhir semester untuk melihat raport. Orang tua dapat memantau pengerjaan tugas harian, nilai skor pelajaran terperinci, dan kritik membangun guru kapan saja.
+                  </p>
+                </div>
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[10px] font-bold text-slate-500 font-mono">
+                  <span>AKURASI: Real-time DB</span>
+                  <span className="text-emerald-600">Aman & Rahasia</span>
+                </div>
+              </div>
+
+              {/* Feature 3 */}
+              <div className="bg-white/60 backdrop-blur-md p-6 rounded-3xl border border-white/70 shadow-sm hover:bg-white hover:scale-[1.01] transition-all duration-300 space-y-4 flex flex-col justify-between">
+                <div className="space-y-3">
+                  <div className="bg-blue-50 text-blue-600 p-2.5 rounded-xl w-10 h-10 flex items-center justify-center border border-blue-100">
+                    <MessageSquare className="w-5 h-5" />
+                  </div>
+                  <span className="inline-block text-[10px] bg-blue-100 text-blue-805 font-bold px-2 py-0.5 rounded-md">
+                    Modul Wali - Komunikasi
+                  </span>
+                  <h3 className="font-bold text-slate-800 text-base leading-tight">Konfirmasi Memo Sakit/Izin</h3>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Orang tua memiliki tautan akses komprehensif ke pusat info untuk berkonsultasi mengenai bepergian, kondisi kesehatan siswa, serta feedback khusus dewan pendidik secara santun.
+                  </p>
+                </div>
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[10px] font-bold text-slate-500 font-mono">
+                  <span>SUPPORT: 24/7 Portal</span>
+                  <span className="text-blue-600">Respons Tercepat</span>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </section>
 
