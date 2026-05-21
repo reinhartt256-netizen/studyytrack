@@ -286,6 +286,26 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                                 <p className="text-xs text-slate-600 line-height-relaxed whitespace-pre-wrap">{task.description}</p>
                               </div>
 
+                              {/* Interactive Submission Guidelines Banner */}
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-blue-50/40 border border-blue-105 p-3.5 rounded-xl text-[11px] text-slate-600">
+                                <div className="space-y-1.5">
+                                  <span className="font-extrabold text-blue-800 uppercase tracking-wider block text-[9px]">💡 Petunjuk Penulisan Jawaban</span>
+                                  <ul className="list-disc pl-4 space-y-1 text-slate-500">
+                                    <li>Tuliskan argumen inti secara terstruktur dan jelas.</li>
+                                    <li>Sebutkan rujukan atau buku referensi jika ada.</li>
+                                    <li>Gunakan tata bahasa resmi (EYD/PUEBI) yang santun.</li>
+                                  </ul>
+                                </div>
+                                <div className="space-y-1.5 border-t sm:border-t-0 sm:border-l border-slate-205/60 pt-2 sm:pt-0 sm:pl-4">
+                                  <span className="font-extrabold text-emerald-800 uppercase tracking-wider block text-[9px]">📎 Kriteria Dokumen Lampiran</span>
+                                  <ul className="list-disc pl-4 space-y-1 text-slate-500">
+                                    <li>Format dokumen: PDF, DOCX, PNG, atau JPG.</li>
+                                    <li>Batas aman ukuran file maksimum 20 Megabyte (MB).</li>
+                                    <li>Gunakan resolusi tinggi agar tulisan tangan terbaca jelas.</li>
+                                  </ul>
+                                </div>
+                              </div>
+
                               {/* Form submission for homework */}
                               <div className="space-y-3">
                                 <span className="block text-xs font-bold text-slate-600">Jawaban / Laporan Anda:</span>

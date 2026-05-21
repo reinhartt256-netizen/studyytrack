@@ -800,6 +800,109 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
             </>
           )}
         </div>
+
+        {/* INTEGRATED ASSIGNMENT SUBMISSION INFO CENTER */}
+        <div className="mt-16 bg-slate-50/50 backdrop-blur-md rounded-[2.5rem] border border-slate-200/60 p-6 sm:p-10 space-y-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            <div className="lg:col-span-5 space-y-5">
+              <span className="text-[10px] bg-blue-105 text-blue-700 font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
+                Sistem Pengumpulan Cloud
+              </span>
+              <h3 className="text-xl sm:text-2xl font-black text-slate-800 leading-tight">
+                Bagaimana Siswa Mengumpulkan Tugas Secara Digital?
+              </h3>
+              <p className="text-xs text-slate-500 leading-relaxed font-semibold">
+                Sistem StudyyTrack didesain untuk menghilangkan penyerahan berkas fisik secara manual. Siswa dapat mengakses seluruh penugasan aktif langsung di akun mereka, melengkapi jawaban, dan menyertakan lampiran berkas yang aman.
+              </p>
+
+              {/* Three detailed steps flow */}
+              <div className="space-y-4 pt-2">
+                <div className="flex gap-3">
+                  <div className="w-6 h-6 rounded-full bg-blue-600 text-white font-black text-[10px] flex items-center justify-center shrink-0">1</div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-800">Tinjau Instruksi & Tenggat</h4>
+                    <p className="text-[11px] text-slate-500 mt-0.5">Siswa dapat membaca uraian soal, kriteria nilai, dan alarm sisa waktu agar tidak terlambat.</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <div className="w-6 h-6 rounded-full bg-emerald-600 text-white font-black text-[10px] flex items-center justify-center shrink-0">2</div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-800">Isi Jawaban & Geser Berkas</h4>
+                    <p className="text-[11px] text-slate-500 mt-0.5">Tersedia lembar isian teks untuk jawaban tertulis dan modul Dropzone seret-lepas berkas digital.</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <div className="w-6 h-6 rounded-full bg-indigo-600 text-white font-black text-[10px] flex items-center justify-center shrink-0">3</div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-800">Notifikasi & Feedback Instan</h4>
+                    <p className="text-[11px] text-slate-500 mt-0.5">Sistem memicu penyerahan langsung ke panel Koreksi Guru dan mengirim riwayat ke akun Wali Murid.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Interactive Mockup Panel representing the Student Upload Interface */}
+            <div className="lg:col-span-7 bg-white rounded-3xl border border-slate-200/80 shadow-md p-5 sm:p-6 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-rose-400"></div>
+                  <div className="w-3 h-3 rounded-full bg-amber-400"></div>
+                  <div className="w-3 h-3 rounded-full bg-emerald-400"></div>
+                  <span className="text-[10px] text-slate-400 font-mono ml-2">studyytrack-portal-siswa.sh</span>
+                </div>
+                <span className="text-[9px] font-bold uppercase text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg">
+                  ● Cloud Storage Online
+                </span>
+              </div>
+
+              {/* Sample Assignment Box */}
+              <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-100 space-y-2.5">
+                <div className="flex justify-between items-start">
+                  <span className="text-[9px] bg-slate-200 text-slate-700 font-bold px-2 py-0.5 rounded-full uppercase">
+                    BIOLOGI - KELAS 10-A IPA
+                  </span>
+                  <span className="text-[9px] text-rose-600 bg-rose-50 font-black px-2 py-0.5 rounded-full">
+                    Sisa Waktu: 4 Jam Lagi
+                  </span>
+                </div>
+                <h4 className="text-xs font-extrabold text-slate-800">Tugas Praktikum 04: Pengamatan Sel Tumbuhan</h4>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  Unggah hasil foto mikrograf sel gabus atau bawang merah yang Anda temukan di lab sekolah, sertakan analisis kesimpulan minimal 3 paragraf.
+                </p>
+              </div>
+
+              {/* Input & Drag-And-Drop mock */}
+              <div className="space-y-2.5">
+                <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">Hasil Teks Jawaban Siswa</label>
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-[10px] text-slate-600 font-mono whitespace-pre-wrap leading-relaxed">
+                  Berdasarkan pengamatan preparat mikroskop, sel gabus (Quercus suber) tampak sebagai ruang-ruang kosong heksagonal tanpa organel hidup...
+                </div>
+
+                {/* Upload Status Card */}
+                <div className="border border-slate-100 rounded-xl p-3 bg-white flex items-center justify-between shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                      <Layers className="w-4.5 h-4.5" />
+                    </div>
+                    <div>
+                      <h5 className="text-[10px] font-bold text-slate-800">Laporan_Praktikum_Sel_Rian.pdf</h5>
+                      <p className="text-[9px] text-slate-400">Ukuran: 4.2 MB • Dokumen Portable PDF</p>
+                    </div>
+                  </div>
+                  <span className="text-[9px] font-black uppercase text-blue-600">TERUNGGAH</span>
+                </div>
+
+                {/* Security guidelines of submittings */}
+                <div className="pt-2 flex items-center gap-2 text-[10px] text-slate-400 bg-slate-50 p-2 rounded-xl border border-dashed">
+                  <Lock className="w-4 h-4 text-slate-400 shrink-0" />
+                  <span>Sistem SSL Enkripsi: Transmisi data diproteksi dan diarahkan langsung ke Cloud Storage sekolah.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* Cloud Architecture Info */}
