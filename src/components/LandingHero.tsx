@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, UserRole } from '../types';
+import { User, UserRole, DatabaseState, Task, Submission } from '../types';
 import { 
   ShieldCheck, User as UserIcon, Heart, BookOpen, 
   CheckCircle, BarChart3, Cloud, Layout, Cpu, Globe, ArrowRight, Check,
@@ -14,13 +14,17 @@ interface LandingHeroProps {
   onSelectUser: (user: User) => void;
   onRegisterUser: (user: User) => void;
   onEnterDemo: () => void;
+  db: DatabaseState;
+  onUpdateDb: (updater: (prev: DatabaseState) => DatabaseState) => void;
 }
 
 export const LandingHero: React.FC<LandingHeroProps> = ({
   availableUsers,
   onSelectUser,
   onRegisterUser,
-  onEnterDemo
+  onEnterDemo,
+  db,
+  onUpdateDb
 }) => {
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
   const [selectedFeatureRole, setSelectedFeatureRole] = useState<'guru' | 'siswa' | 'orangtua'>('guru');
@@ -44,12 +48,45 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
 
   const students = availableUsers.filter(u => u.role === 'siswa');
 
+  // Interactive Live Homework Submission States (Connected to Firestore)
+  const [subStudentId, setSubStudentId] = useState('u-siswa-1');
+  const [subTaskId, setSubTaskId] = useState('t1');
+  const [subText, setSubText] = useState('Berdasarkan pengamatan preparat mikroskop di lab sekolah, sel gabus (Quercus suber) tampak sebagai struktur ruang-ruang kosong heksagonal...');
+  const [subFileName, setSubFileName] = useState('Laporan_Praktikum_Sel_Rian.pdf');
+  const [subSuccess, setSubSuccess] = useState(false);
+
   // Load default linked student id
   useState(() => {
     if (students.length > 0) {
       setRegLinkedStudentId(students[0].id);
     }
   });
+
+  const handleSubmitLandingTask = (e: React.FormEvent) => {
+    e.preventDefault();
+    const student = db.users.find(u => u.id === subStudentId);
+    const task = db.tasks.find(t => t.id === subTaskId) || db.tasks[0];
+    if (!student || !task) return;
+
+    const newSubmission: Submission = {
+      id: `s-landing-${Date.now()}`,
+      taskId: task.id,
+      taskTitle: task.title,
+      studentId: student.id,
+      studentName: student.name,
+      submittedAt: new Date().toISOString(),
+      content: subText,
+      fileName: subFileName || `${student.name.toLowerCase().replace(' ', '_')}_tugas.pdf`,
+      status: 'submitted'
+    };
+
+    onUpdateDb(prev => ({
+      ...prev,
+      submissions: [newSubmission, ...prev.submissions]
+    }));
+
+    setSubSuccess(true);
+  };
 
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -802,11 +839,11 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
         </div>
 
         {/* INTEGRATED ASSIGNMENT SUBMISSION INFO CENTER */}
-        <div className="mt-16 bg-slate-50/50 backdrop-blur-md rounded-[2.5rem] border border-slate-200/60 p-6 sm:p-10 space-y-8">
+        <div id="landing-assignment-submission" className="mt-16 bg-slate-50/50 backdrop-blur-md rounded-[2.5rem] border border-slate-200/60 p-6 sm:p-10 space-y-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-5 space-y-5">
-              <span className="text-[10px] bg-blue-105 text-blue-700 font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
-                Sistem Pengumpulan Cloud
+              <span className="text-[10px] bg-blue-100 text-blue-700 font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
+                Sistem Pengumpulan Cloud (Firestore Active)
               </span>
               <h3 className="text-xl sm:text-2xl font-black text-slate-800 leading-tight">
                 Bagaimana Siswa Mengumpulkan Tugas Secara Digital?
@@ -820,25 +857,44 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                 <div className="flex gap-3">
                   <div className="w-6 h-6 rounded-full bg-blue-600 text-white font-black text-[10px] flex items-center justify-center shrink-0">1</div>
                   <div>
-                    <h4 className="text-xs font-bold text-slate-800">Tinjau Instruksi & Tenggat</h4>
-                    <p className="text-[11px] text-slate-500 mt-0.5">Siswa dapat membaca uraian soal, kriteria nilai, dan alarm sisa waktu agar tidak terlambat.</p>
+                    <h4 className="text-xs font-bold text-slate-800">Pilih Akun & Penugasan Baru</h4>
+                    <p className="text-[11px] text-slate-500 mt-0.5">Simulasikan pengiriman dari akun siswa mana pun ke tugas matapelajaran aktif di database.</p>
                   </div>
                 </div>
 
                 <div className="flex gap-3">
                   <div className="w-6 h-6 rounded-full bg-emerald-600 text-white font-black text-[10px] flex items-center justify-center shrink-0">2</div>
                   <div>
-                    <h4 className="text-xs font-bold text-slate-800">Isi Jawaban & Geser Berkas</h4>
-                    <p className="text-[11px] text-slate-500 mt-0.5">Tersedia lembar isian teks untuk jawaban tertulis dan modul Dropzone seret-lepas berkas digital.</p>
+                    <h4 className="text-xs font-bold text-slate-800">Ketik Uraian & Klik Kirim</h4>
+                    <p className="text-[11px] text-slate-500 mt-0.5">Isi teks materi atau file lampiran, kemudian klik tombol kirim untuk mengalirkan ke Firestore.</p>
                   </div>
                 </div>
+              </div>
 
-                <div className="flex gap-3">
-                  <div className="w-6 h-6 rounded-full bg-indigo-600 text-white font-black text-[10px] flex items-center justify-center shrink-0">3</div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-800">Notifikasi & Feedback Instan</h4>
-                    <p className="text-[11px] text-slate-500 mt-0.5">Sistem memicu penyerahan langsung ke panel Koreksi Guru dan mengirim riwayat ke akun Wali Murid.</p>
-                  </div>
+              {/* Live Submissions Tracker */}
+              <div className="pt-4 border-t border-slate-200 space-y-3 text-left">
+                <span className="text-[10px] font-extrabold text-blue-700 uppercase tracking-widest block">
+                  📡 Transmisi Firestore Teranyar (Real-time Tracker)
+                </span>
+                <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
+                  {db.submissions.length === 0 ? (
+                    <p className="text-[11px] text-slate-400 italic">Belum ada pengiriman tugas di database cloud.</p>
+                  ) : (
+                    db.submissions.slice().reverse().slice(0, 3).map(sub => (
+                      <div key={sub.id} className="p-2.5 bg-white/60 border border-slate-200/55 rounded-xl flex items-center justify-between text-[11px] hover:bg-white/80 transition-all font-sans">
+                        <div className="truncate max-w-[70%]">
+                          <p className="font-extrabold text-slate-800 truncate">{sub.studentName}</p>
+                          <p className="text-[10px] text-slate-500 truncate">{sub.taskTitle}</p>
+                          <p className="text-[9px] text-slate-400 truncate mt-0.5">"{sub.content}"</p>
+                        </div>
+                        <span className={`text-[9px] font-black px-2.5 py-0.5 rounded-full ${
+                          sub.status === 'graded' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-700 animate-pulse'
+                        }`}>
+                          {sub.status === 'graded' ? `Skor: ${sub.score}` : 'Pending'}
+                        </span>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
@@ -850,56 +906,108 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                   <div className="w-3 h-3 rounded-full bg-rose-400"></div>
                   <div className="w-3 h-3 rounded-full bg-amber-400"></div>
                   <div className="w-3 h-3 rounded-full bg-emerald-400"></div>
-                  <span className="text-[10px] text-slate-400 font-mono ml-2">studyytrack-portal-siswa.sh</span>
+                  <span className="text-[10px] text-slate-400 font-mono ml-2">studyytrack-database-submission.sh</span>
                 </div>
-                <span className="text-[9px] font-bold uppercase text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg">
-                  ● Cloud Storage Online
+                <span className="text-[9px] font-semibold uppercase text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg">
+                  ● Live Cloud Database
                 </span>
               </div>
 
-              {/* Sample Assignment Box */}
-              <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-100 space-y-2.5">
-                <div className="flex justify-between items-start">
-                  <span className="text-[9px] bg-slate-200 text-slate-700 font-bold px-2 py-0.5 rounded-full uppercase">
-                    BIOLOGI - KELAS 10-A IPA
-                  </span>
-                  <span className="text-[9px] text-rose-600 bg-rose-50 font-black px-2 py-0.5 rounded-full">
-                    Sisa Waktu: 4 Jam Lagi
-                  </span>
-                </div>
-                <h4 className="text-xs font-extrabold text-slate-800">Tugas Praktikum 04: Pengamatan Sel Tumbuhan</h4>
-                <p className="text-[11px] text-slate-500 leading-relaxed">
-                  Unggah hasil foto mikrograf sel gabus atau bawang merah yang Anda temukan di lab sekolah, sertakan analisis kesimpulan minimal 3 paragraf.
-                </p>
-              </div>
-
-              {/* Input & Drag-And-Drop mock */}
-              <div className="space-y-2.5">
-                <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">Hasil Teks Jawaban Siswa</label>
-                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-[10px] text-slate-600 font-mono whitespace-pre-wrap leading-relaxed">
-                  Berdasarkan pengamatan preparat mikroskop, sel gabus (Quercus suber) tampak sebagai ruang-ruang kosong heksagonal tanpa organel hidup...
-                </div>
-
-                {/* Upload Status Card */}
-                <div className="border border-slate-100 rounded-xl p-3 bg-white flex items-center justify-between shadow-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                      <Layers className="w-4.5 h-4.5" />
-                    </div>
-                    <div>
-                      <h5 className="text-[10px] font-bold text-slate-800">Laporan_Praktikum_Sel_Rian.pdf</h5>
-                      <p className="text-[9px] text-slate-400">Ukuran: 4.2 MB • Dokumen Portable PDF</p>
-                    </div>
+              {/* Dynamic Interactive Submission Form */}
+              <form onSubmit={handleSubmitLandingTask} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
+                  {/* SELECT STUDENT */}
+                  <div className="space-y-1">
+                    <label className="block text-[9px] font-extrabold text-slate-500 uppercase tracking-widest">Simulasikan Sebagai:</label>
+                    <select
+                      value={subStudentId}
+                      onChange={(e) => setSubStudentId(e.target.value)}
+                      className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 font-semibold text-slate-700"
+                    >
+                      {students.map(std => (
+                        <option key={std.id} value={std.id}>{std.name} ({std.className || 'Umum'})</option>
+                      ))}
+                    </select>
                   </div>
-                  <span className="text-[9px] font-black uppercase text-blue-600">TERUNGGAH</span>
+
+                  {/* SELECT TASK */}
+                  <div className="space-y-1">
+                    <label className="block text-[9px] font-extrabold text-slate-500 uppercase tracking-widest">Pilih Penugasan:</label>
+                    <select
+                      value={subTaskId}
+                      onChange={(e) => setSubTaskId(e.target.value)}
+                      className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 font-semibold text-slate-700"
+                    >
+                      {db.tasks.map(tsk => (
+                        <option key={tsk.id} value={tsk.id}>{tsk.title}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
-                {/* Security guidelines of submittings */}
-                <div className="pt-2 flex items-center gap-2 text-[10px] text-slate-400 bg-slate-50 p-2 rounded-xl border border-dashed">
-                  <Lock className="w-4 h-4 text-slate-400 shrink-0" />
-                  <span>Sistem SSL Enkripsi: Transmisi data diproteksi dan diarahkan langsung ke Cloud Storage sekolah.</span>
+                {/* Selected Task Details */}
+                {(() => {
+                  const selectedTask = db.tasks.find(t => t.id === subTaskId) || db.tasks[0];
+                  if (!selectedTask) return null;
+                  return (
+                    <div className="bg-slate-50/80 p-3.5 rounded-2xl border border-slate-150 space-y-1.5 text-left">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[9px] bg-slate-200 text-slate-700 font-extrabold px-2 py-0.5 rounded-full uppercase">
+                          Kelas: {selectedTask.className}
+                        </span>
+                        <span className="text-[9px] text-rose-600 bg-rose-50 font-black px-2 py-0.5 rounded-full">
+                          Tenggat: {selectedTask.dueDate}
+                        </span>
+                      </div>
+                      <h4 className="text-xs font-extrabold text-slate-800">{selectedTask.title}</h4>
+                      <p className="text-[10px] text-slate-500 leading-normal">
+                        {selectedTask.description}
+                      </p>
+                    </div>
+                  );
+                })()}
+
+                {/* Answer Content */}
+                <div className="space-y-2 text-left">
+                  <label className="block text-[9px] font-extrabold text-slate-400 uppercase tracking-widest">Isi Lembar Jawaban Tertulis</label>
+                  <textarea
+                    rows={3}
+                    value={subText}
+                    onChange={(e) => setSubText(e.target.value)}
+                    placeholder="Sebutkan ringkasan jawaban akademik, hasil lab, atau ulasan teoritis atau argumentasi Anda secara santun..."
+                    className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-blue-500 focus:outline-none transition-all leading-normal text-slate-700 font-sans"
+                    required
+                  />
+
+                  {/* Simulated Upload attachment name input */}
+                  <div className="space-y-1">
+                    <label className="block text-[9px] font-extrabold text-slate-400 uppercase tracking-widest">Nama File Hasil Scan/PDF (Opsional)</label>
+                    <input
+                      type="text"
+                      value={subFileName}
+                      onChange={(e) => setSubFileName(e.target.value)}
+                      placeholder="Contoh: hasil_lab_sel.pdf"
+                      className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none text-slate-700 font-semibold"
+                    />
+                  </div>
                 </div>
-              </div>
+
+                {/* Submit button */}
+                <button
+                  type="submit"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold py-3 px-5 rounded-xl shadow-sm cursor-pointer transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                >
+                  <Cloud className="w-4 h-4" />
+                  <span>Kirim Tugas ke Database Cloud (Firestore)</span>
+                </button>
+
+                {subSuccess && (
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-extrabold rounded-xl flex items-center gap-1.5 animate-pulse text-left">
+                    <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Sukses! Jawaban telah terkirim ke Firestore. Silakan masuk sebagai "Guru" (Budi Santoso) di Portal Demonstrasi untuk langsung mengoreksi & menilai tugas ini!</span>
+                  </div>
+                )}
+              </form>
             </div>
           </div>
         </div>

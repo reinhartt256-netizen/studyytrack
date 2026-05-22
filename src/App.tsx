@@ -42,7 +42,8 @@ export default function App() {
             console.log("Firebase secure anonymous session established.");
           })
           .catch(err => {
-            console.error("Firebase Anonymous Auth failed", err);
+            console.warn("Firebase Anonymous Auth was restricted. Proceeding safely with public cloud settings.", err);
+            setAuthReady(true);
           });
       }
     });
@@ -240,6 +241,8 @@ export default function App() {
         {!isDemoMode ? (
           <LandingHero
             availableUsers={dbState.users}
+            db={dbState}
+            onUpdateDb={handleUpdateDb}
             onSelectUser={(user) => {
               setCurrentUser(user);
               try {
