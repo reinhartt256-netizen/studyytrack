@@ -26,6 +26,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
   const [submissionText, setSubmissionText] = useState('');
   const [simulatedFileName, setSimulatedFileName] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Filter tasks belonging to class
   const studentClass = currentUser.className || "Kelas 10-A IPA";
@@ -64,7 +65,10 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
 
   // Submit Homework Assignment
   const handleSubmitHomework = (taskId: string, taskTitle: string) => {
-    if (!submissionText.trim()) return;
+    if (!submissionText.trim() && !simulatedFileName) {
+      setSubmitError("Harap tulis jawaban Anda terlebih dahulu atau lampirkan berkas tugas.");
+      return;
+    }
 
     const newSubmission: Submission = {
       id: `s-${Date.now()}`,
@@ -73,7 +77,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
       studentId: currentUser.id,
       studentName: currentUser.name,
       submittedAt: new Date().toISOString(),
-      content: submissionText,
+      content: submissionText.trim() || `[Mengirim lampiran berkas penugasan: ${simulatedFileName}]`,
       fileName: simulatedFileName || `${currentUser.name.toLowerCase().replace(' ', '_')}_tugas.pdf`,
       status: 'submitted'
     };
@@ -93,6 +97,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
 
     setSubmissionText('');
     setSimulatedFileName('');
+    setSubmitError(null);
     setExpandedTaskId(null);
   };
 
@@ -256,7 +261,13 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                           {/* Closed Card summary header */}
                           <div 
                             id={`task-header-${task.id}`}
-                            onClick={() => setExpandedTaskId(isExpanded ? null : task.id)}
+                            onClick={() => {
+                              const nextId = isExpanded ? null : task.id;
+                              setExpandedTaskId(nextId);
+                              setSubmissionText('');
+                              setSimulatedFileName('');
+                              setSubmitError(null);
+                            }}
                             className="p-5 flex items-center justify-between cursor-pointer hover:bg-white/35 transition-colors"
                           >
                             <div className="space-y-1">
@@ -342,6 +353,12 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                                     <p className="text-[10px] text-slate-400 mt-1">Atau klik untuk menelusuri folder lokal Anda</p>
                                   </label>
                                 </div>
+
+                                {submitError && (
+                                  <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs font-semibold rounded-xl">
+                                    ⚠️ {submitError}
+                                  </div>
+                                )}
 
                                 <div className="flex justify-end gap-2">
                                   <button

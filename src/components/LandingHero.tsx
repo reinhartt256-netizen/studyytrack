@@ -54,6 +54,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
   const [subText, setSubText] = useState('Berdasarkan pengamatan preparat mikroskop di lab sekolah, sel gabus (Quercus suber) tampak sebagai struktur ruang-ruang kosong heksagonal...');
   const [subFileName, setSubFileName] = useState('Laporan_Praktikum_Sel_Rian.pdf');
   const [subSuccess, setSubSuccess] = useState(false);
+  const [subError, setSubError] = useState('');
 
   // Load default linked student id
   useState(() => {
@@ -64,9 +65,17 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
 
   const handleSubmitLandingTask = (e: React.FormEvent) => {
     e.preventDefault();
+    setSubError('');
+    setSubSuccess(false);
+
     const student = db.users.find(u => u.id === subStudentId);
     const task = db.tasks.find(t => t.id === subTaskId) || db.tasks[0];
     if (!student || !task) return;
+
+    if (!subText.trim() && !subFileName.trim()) {
+      setSubError('Harap tulis uraian jawaban Anda atau cantumkan nama file lampiran tugas sekolah.');
+      return;
+    }
 
     const newSubmission: Submission = {
       id: `s-landing-${Date.now()}`,
@@ -75,8 +84,8 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
       studentId: student.id,
       studentName: student.name,
       submittedAt: new Date().toISOString(),
-      content: subText,
-      fileName: subFileName || `${student.name.toLowerCase().replace(' ', '_')}_tugas.pdf`,
+      content: subText.trim() || `[Mengirim berkas lampiran penugasan: ${subFileName}]`,
+      fileName: subFileName.trim() || `${student.name.toLowerCase().replace(' ', '_')}_tugas.pdf`,
       status: 'submitted'
     };
 
@@ -976,7 +985,6 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                     onChange={(e) => setSubText(e.target.value)}
                     placeholder="Sebutkan ringkasan jawaban akademik, hasil lab, atau ulasan teoritis atau argumentasi Anda secara santun..."
                     className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-blue-500 focus:outline-none transition-all leading-normal text-slate-700 font-sans"
-                    required
                   />
 
                   {/* Simulated Upload attachment name input */}
@@ -991,6 +999,12 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                     />
                   </div>
                 </div>
+
+                {subError && (
+                  <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs font-semibold rounded-xl text-left">
+                    ⚠️ {subError}
+                  </div>
+                )}
 
                 {/* Submit button */}
                 <button
