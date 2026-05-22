@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DatabaseState, Task, Submission, User, Notification } from '../types';
+import { DatabaseState, Task, Submission, User, Notification, Attendance } from '../types';
 import { 
   BookOpen, Calendar, ChevronRight, CheckCircle, Clock, 
   Upload, FileText, Bell, AlertTriangle, ArrowRight, Award, Trash2, LogOut
@@ -837,8 +837,8 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                                 <textarea
                                   id={`homework-content-${task.id}`}
                                   rows={5}
-                                  value={submissionText}
-                                  onChange={(e) => setSubmissionText(e.target.value)}
+                                  value={draftTexts[task.id] || ''}
+                                  onChange={(e) => setDraftTexts(prev => ({ ...prev, [task.id]: e.target.value }))}
                                   placeholder="Ketikkan teks materi pengerjaan, jawaban essay, atau ringkasan hasil belajar Anda secara detail di sini..."
                                   className="w-full text-xs p-3 bg-white/40 border border-white/60 rounded-xl focus:border-blue-500 focus:bg-white/80 focus:outline-none"
                                 />
@@ -848,7 +848,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                                   id={`dropzone-${task.id}`}
                                   onDragOver={handleDragOver}
                                   onDragLeave={handleDragLeave}
-                                  onDrop={handleDrop}
+                                  onDrop={(e) => handleDrop(e, task.id)}
                                   className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-all ${
                                     isDragOver ? 'border-blue-600 bg-blue-100/30 scale-[1.01]' : 'border-slate-350 bg-white/40 hover:bg-white/60'
                                   }`}
@@ -856,13 +856,13 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                                   <input 
                                     id={`file-input-${task.id}`}
                                     type="file" 
-                                    onChange={handleFileSelect} 
+                                    onChange={(e) => handleFileSelect(e, task.id)} 
                                     className="hidden" 
                                   />
                                   <label htmlFor={`file-input-${task.id}`} className="cursor-pointer">
                                     <Upload className="w-8 h-8 text-slate-400 mx-auto mb-2" />
                                     <p className="text-xs font-semibold text-slate-600">
-                                      {simulatedFileName ? `File terpilih: ${simulatedFileName}` : 'Foto Tugas atau Tarik File (PDF, DOCX) Ke Sini'}
+                                      {draftFiles[task.id] ? `File terpilih: ${draftFiles[task.id]}` : 'Foto Tugas atau Tarik File (PDF, DOCX) Ke Sini'}
                                     </p>
                                     <p className="text-[10px] text-slate-400 mt-1">Atau klik untuk menelusuri folder lokal Anda</p>
                                   </label>
@@ -871,7 +871,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                                 {/* Simulation of interactive delivery conditions (Success vs Network Failure) */}
                                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 bg-slate-100/70 rounded-xl border border-slate-200">
                                   <div className="space-y-0.5 text-left">
-                                    <span className="block text-xs font-extrabold text-slate-700">Opsi Simulasi Pengiriman</span>
+                                    <span className="block text-xs font-extrabold text-slate-705">Opsi Simulasi Pengiriman</span>
                                     <span className="block text-[10px] text-slate-500">Pilih skenario untuk menguji status respons dan sistem notifikasi.</span>
                                   </div>
                                   <label className="flex items-center gap-2 cursor-pointer bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-xs">
@@ -926,9 +926,9 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                                   </div>
                                 )}
 
-                                {submitError && (
+                                {draftErrors[task.id] && (
                                   <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs font-semibold rounded-xl text-left">
-                                    ⚠️ {submitError}
+                                    ⚠️ {draftErrors[task.id]}
                                   </div>
                                 )}
 
@@ -1024,69 +1024,202 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
             </div>
           )}
 
-          {/* ATTENDANCE SUB-TAB */}
+            {/* ATTENDANCE SUB-TAB */}
           {activeTab === 'kehadiran' && (
             <div id="panel-student-kehadiran" className="bg-white/60 backdrop-blur-md rounded-2xl border border-white/65 shadow-sm p-6 space-y-6">
               <div>
                 <h2 className="text-lg font-bold text-slate-800">Laporan Transparansi Kehadiran</h2>
-                <p className="text-xs text-slate-500">Histori absensi harian yang tercatat di sistem digital sekolah.</p>
+                <p className="text-xs text-slate-500">Lakukan absen secara mandiri dan lihat histori absensi harian Anda di bawah ini.</p>
               </div>
 
-              {/* Grid of indicators */}
-              <div className="grid grid-cols-4 gap-4">
-                <div className="bg-emerald-600/10 border border-emerald-500/20 backdrop-blur-sm rounded-xl p-4 text-center">
-                  <span className="block text-emerald-800 font-bold text-lg md:text-2xl">{presentCount}</span>
-                  <span className="text-[10px] font-bold text-slate-500 uppercase">Hadir</span>
-                </div>
-                <div className="bg-blue-600/10 border border-blue-500/20 backdrop-blur-sm rounded-xl p-4 text-center">
-                  <span className="block text-blue-800 font-bold text-lg md:text-2xl">{permissionCount}</span>
-                  <span className="text-[10px] font-bold text-slate-500 uppercase">Izin</span>
-                </div>
-                <div className="bg-amber-600/10 border border-amber-500/20 backdrop-blur-sm rounded-xl p-4 text-center">
-                  <span className="block text-amber-800 font-bold text-lg md:text-2xl">{sickCount}</span>
-                  <span className="text-[10px] font-bold text-slate-500 uppercase">Sakit</span>
-                </div>
-                <div className="bg-rose-600/10 border border-rose-500/20 backdrop-blur-sm rounded-xl p-4 text-center">
-                  <span className="block text-rose-800 font-bold text-lg md:text-2xl">{alfaCount}</span>
-                  <span className="text-[10px] font-bold text-slate-500 uppercase">Alfa</span>
-                </div>
-              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-2">
+                {/* Column Left: Self Attendance Check-In Form */}
+                <div className="lg:col-span-5 space-y-6">
+                  <form onSubmit={handleSubmitAttendance} className="bg-white/90 border border-slate-150 rounded-2xl p-5 shadow-xs space-y-4 text-left">
+                    <div className="border-b border-slate-100 pb-3 flex items-center gap-2">
+                      <div className="w-8 h-8 bg-indigo-50 text-indigo-650 rounded-xl flex items-center justify-center font-bold">
+                        ✓
+                      </div>
+                      <div>
+                        <h3 className="font-extrabold text-sm text-slate-800">Form Absensi Mandiri</h3>
+                        <p className="text-[10px] text-slate-400 font-medium">Laporkan status kehadiran demi integritas pelaporan institusi.</p>
+                      </div>
+                    </div>
 
-              {/* Attendance logs table */}
-              <div className="border border-white/60 rounded-xl overflow-hidden">
-                <table className="w-full text-sm text-left">
-                  <thead>
-                    <tr className="bg-slate-50 border-b border-slate-100">
-                      <th className="p-3 font-semibold text-slate-600">Tanggal</th>
-                      <th className="p-3 font-semibold text-slate-600">Nama Kelas / Mata Pelajaran</th>
-                      <th className="p-3 font-semibold text-slate-600 text-center">Status Kehadiran</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {myAttendance.length === 0 ? (
-                      <tr>
-                        <td colSpan={3} className="p-4 text-center text-xs text-slate-400">Belum ada pencatatan kehadiran yang terekam.</td>
-                      </tr>
-                    ) : (
-                      myAttendance.map(log => (
-                        <tr key={log.id} className="hover:bg-slate-50/50">
-                          <td className="p-3 font-semibold text-slate-700">{log.date}</td>
-                          <td className="p-3 text-slate-500 text-xs">{log.className}</td>
-                          <td className="p-3 text-center">
-                            <span className={`px-3 py-1 rounded-lg text-xs font-bold uppercase ${
-                              log.status === 'hadir' ? 'bg-emerald-100 text-emerald-800'
-                                : log.status === 'sakit' ? 'bg-amber-100 text-amber-800'
-                                : log.status === 'izin' ? 'bg-blue-100 text-blue-800'
-                                : 'bg-rose-100 text-rose-800'
-                            }`}>
-                              {log.status}
-                            </span>
-                          </td>
-                        </tr>
-                      ))
+                    {/* Class dropdown selection */}
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-black text-slate-700 uppercase tracking-wider">
+                        1. Pilih Mata Pelajaran:
+                      </label>
+                      <select 
+                        id="select-attendance-class"
+                        value={selectedAttendanceClassId}
+                        onChange={(e) => setSelectedAttendanceClassId(e.target.value)}
+                        className="w-full text-xs font-bold p-3 bg-white border border-slate-200 rounded-xl focus:border-indigo-505 focus:outline-none cursor-pointer text-slate-800"
+                        required
+                      >
+                        <option value="" className="text-slate-400">-- Pilih Pelajaran Sekolah --</option>
+                        {db.classes.map(c => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Attendance status selection button group */}
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-black text-slate-700 uppercase tracking-wider">
+                        2. Status Kehadiran Anda:
+                      </label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {(['hadir', 'izin', 'sakit'] as const).map(status => (
+                          <button
+                            key={status}
+                            type="button"
+                            onClick={() => setAttendanceStatusChoice(status)}
+                            className={`py-2 px-3 text-xs font-extrabold rounded-xl border text-center transition-all capitalize cursor-pointer ${
+                              attendanceStatusChoice === status
+                                ? status === 'hadir'
+                                  ? 'bg-emerald-50 border-emerald-500 text-emerald-850 shadow-3xs'
+                                  : status === 'izin'
+                                    ? 'bg-blue-50 border-blue-500 text-blue-850 shadow-3xs'
+                                    : 'bg-amber-50 border-amber-500 text-amber-850 shadow-3xs'
+                                : 'bg-transparent border-slate-200 text-slate-600 hover:bg-slate-50'
+                            }`}
+                          >
+                            {status}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Attendance Reason Description Textarea */}
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-black text-slate-700 uppercase tracking-wider">
+                        3. Keterangan / Alasan (Opsional):
+                      </label>
+                      <textarea
+                        id="attendance-reason-input"
+                        rows={3}
+                        value={attendanceReason}
+                        onChange={(e) => setAttendanceReason(e.target.value)}
+                        placeholder="Tulis alasan jika Anda Izin, Sakit, atau memerlukan catatan khusus..."
+                        className="w-full text-xs p-3 bg-white/70 border border-slate-200 rounded-xl focus:border-indigo-500 focus:bg-white focus:outline-none text-slate-700 font-medium"
+                      />
+                    </div>
+
+                    {/* Progress tracking representation */}
+                    {isSubmittingAttendance && (
+                      <div className="space-y-1.5 p-3.5 bg-indigo-50 rounded-xl border border-indigo-100 text-left">
+                        <div className="flex justify-between text-xs font-extrabold text-indigo-805">
+                          <span className="flex items-center gap-1.5 animate-pulse">
+                            <span className="animate-spin border-2 border-indigo-805 border-t-transparent rounded-full w-3.5 h-3.5"></span>
+                            Mentransmisikan data absensi...
+                          </span>
+                          <span>{attendanceProgress}%</span>
+                        </div>
+                        <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                          <div 
+                            className="bg-indigo-600 h-1.5 rounded-full transition-all duration-300" 
+                            style={{ width: `${attendanceProgress}%` }}
+                          ></div>
+                        </div>
+                      </div>
                     )}
-                  </tbody>
-                </table>
+
+                    {/* Success notification */}
+                    {attendanceSuccessMessage && (
+                      <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-2 text-xs font-bold text-emerald-800">
+                        <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                        <div>
+                          <p>Presensi Sukses</p>
+                          <p className="font-semibold text-[11px] mt-0.5 text-slate-600">{attendanceSuccessMessage}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Error notification */}
+                    {attendanceErrorMessage && (
+                      <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold rounded-xl flex items-start gap-2">
+                        <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                        <span>{attendanceErrorMessage}</span>
+                      </div>
+                    )}
+
+                    {/* Submission CTA block */}
+                    <button
+                      type="submit"
+                      disabled={isSubmittingAttendance}
+                      className={`w-full text-xs font-bold py-3.5 rounded-xl text-center shadow-md cursor-pointer transition-all flex items-center justify-center gap-2 ${
+                        isSubmittingAttendance
+                          ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                          : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white active:scale-[0.99]'
+                      }`}
+                    >
+                      <Clock className="w-4 h-4" />
+                      <span>{isSubmittingAttendance ? `Menyimpan Presensi (${attendanceProgress}%)...` : 'Kirim Kehadiran Sekarang'}</span>
+                    </button>
+                  </form>
+                </div>
+
+                {/* Column Right: Stats indicators + Logs table */}
+                <div className="lg:col-span-7 space-y-6">
+                  {/* Grid of indicators */}
+                  <div className="grid grid-cols-4 gap-3">
+                    <div className="bg-emerald-605/10 border border-emerald-500/25 backdrop-blur-sm rounded-xl p-3 text-center">
+                      <span className="block text-emerald-800 font-extrabold text-lg md:text-2xl">{presentCount}</span>
+                      <span className="text-[9px] font-black text-slate-500 uppercase tracking-wider">Hadir</span>
+                    </div>
+                    <div className="bg-blue-605/10 border border-blue-500/25 backdrop-blur-sm rounded-xl p-3 text-center">
+                      <span className="block text-blue-800 font-extrabold text-lg md:text-2xl">{permissionCount}</span>
+                      <span className="text-[9px] font-black text-slate-500 uppercase tracking-wider">Izin</span>
+                    </div>
+                    <div className="bg-amber-605/10 border border-amber-500/25 backdrop-blur-sm rounded-xl p-3 text-center">
+                      <span className="block text-amber-800 font-extrabold text-lg md:text-2xl">{sickCount}</span>
+                      <span className="text-[9px] font-black text-slate-500 uppercase tracking-wider">Sakit</span>
+                    </div>
+                    <div className="bg-rose-605/10 border border-rose-500/25 backdrop-blur-sm rounded-xl p-3 text-center">
+                      <span className="block text-rose-800 font-extrabold text-lg md:text-2xl">{alfaCount}</span>
+                      <span className="text-[9px] font-black text-slate-500 uppercase tracking-wider">Alfa</span>
+                    </div>
+                  </div>
+
+                  {/* Attendance logs table */}
+                  <div className="border border-white/60 rounded-xl overflow-hidden bg-white/70">
+                    <table className="w-full text-xs text-left">
+                      <thead>
+                        <tr className="bg-slate-55 border-b border-slate-100 text-slate-650 font-bold">
+                          <th className="p-3 font-semibold text-slate-600">Tanggal</th>
+                          <th className="p-3 font-semibold text-slate-600">Mata Pelajaran</th>
+                          <th className="p-3 font-semibold text-slate-600 text-center">Status Kehadiran</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {myAttendance.length === 0 ? (
+                          <tr>
+                            <td colSpan={3} className="p-4 text-center text-[11px] text-slate-400 font-medium">Belum ada pencatatan kehadiran yang terekam.</td>
+                          </tr>
+                        ) : (
+                          myAttendance.slice().reverse().map(log => (
+                            <tr key={log.id} className="hover:bg-slate-50/50">
+                              <td className="p-3 font-bold text-slate-700">{log.date}</td>
+                              <td className="p-3 text-slate-500 text-xs font-semibold">{log.className}</td>
+                              <td className="p-3 text-center">
+                                <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase ${
+                                  log.status === 'hadir' ? 'bg-emerald-100 text-emerald-800'
+                                    : log.status === 'sakit' ? 'bg-amber-100 text-amber-800'
+                                    : log.status === 'izin' ? 'bg-blue-100 text-blue-805'
+                                    : 'bg-rose-100 text-rose-800'
+                                }`}>
+                                  {log.status}
+                                </span>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             </div>
           )}
