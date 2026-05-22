@@ -26,10 +26,19 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
   const [selectedTaskId, setSelectedTaskId] = useState<string>('');
 
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
-  const [submissionText, setSubmissionText] = useState('');
-  const [simulatedFileName, setSimulatedFileName] = useState('');
+  const [draftTexts, setDraftTexts] = useState<{ [taskId: string]: string }>({});
+  const [draftFiles, setDraftFiles] = useState<{ [taskId: string]: string }>({});
+  const [draftErrors, setDraftErrors] = useState<{ [taskId: string]: string | null }>({});
   const [isDragOver, setIsDragOver] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // Student self check-in states
+  const [selectedAttendanceClassId, setSelectedAttendanceClassId] = useState<string>('');
+  const [attendanceStatusChoice, setAttendanceStatusChoice] = useState<'hadir' | 'izin' | 'sakit'>('hadir');
+  const [attendanceReason, setAttendanceReason] = useState<string>('');
+  const [isSubmittingAttendance, setIsSubmittingAttendance] = useState<boolean>(false);
+  const [attendanceProgress, setAttendanceProgress] = useState<number>(0);
+  const [attendanceSuccessMessage, setAttendanceSuccessMessage] = useState<string | null>(null);
+  const [attendanceErrorMessage, setAttendanceErrorMessage] = useState<string | null>(null);
 
   // Real-time submission progress and simulation states
   const [submittingTaskId, setSubmittingTaskId] = useState<string | null>(null);
@@ -58,28 +67,36 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
     setIsDragOver(false);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = (e: React.DragEvent, taskId: string) => {
     e.preventDefault();
     setIsDragOver(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      setSimulatedFileName(e.dataTransfer.files[0].name);
+      const name = e.dataTransfer.files[0].name;
+      setDraftFiles(prev => ({ ...prev, [taskId]: name }));
     }
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, taskId: string) => {
     if (e.target.files && e.target.files.length > 0) {
-      setSimulatedFileName(e.target.files[0].name);
+      const name = e.target.files[0].name;
+      setDraftFiles(prev => ({ ...prev, [taskId]: name }));
     }
   };
 
   // Submit Homework Assignment with interactive progress and simulated success/failure notifications
   const handleSubmitHomework = (taskId: string, taskTitle: string) => {
-    if (!submissionText.trim() && !simulatedFileName) {
-      setSubmitError("Harap tulis jawaban Anda terlebih dahulu atau lampirkan berkas tugas.");
+    const text = (draftTexts[taskId] || '').trim();
+    const fileName = draftFiles[taskId] || '';
+
+    if (!text && !fileName) {
+      setDraftErrors(prev => ({
+        ...prev,
+        [taskId]: "Harap tulis jawaban Anda terlebih dahulu atau lampirkan berkas tugas."
+      }));
       return;
     }
 
-    setSubmitError(null);
+    setDraftErrors(prev => ({ ...prev, [taskId]: null }));
     setSubmissionStatus(prev => ({ ...prev, [taskId]: null }));
     setSubmittingTaskId(taskId);
     setSubmissionProgress(0);
@@ -124,8 +141,8 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
             studentId: currentUser.id,
             studentName: currentUser.name,
             submittedAt: new Date().toISOString(),
-            content: submissionText.trim() || `[Mengirim lampiran berkas penugasan: ${simulatedFileName}]`,
-            fileName: simulatedFileName || `${currentUser.name.toLowerCase().replace(' ', '_')}_tugas.pdf`,
+            content: text || `[Mengirim lampiran berkas penugasan: ${fileName}]`,
+            fileName: fileName || `${currentUser.name.toLowerCase().replace(' ', '_')}_tugas.pdf`,
             status: 'submitted'
           };
 
@@ -170,10 +187,11 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
           }));
 
           // Clean up form state
-          setSubmissionText('');
-          setSimulatedFileName('');
+          setDraftTexts(prev => ({ ...prev, [taskId]: '' }));
+          setDraftFiles(prev => ({ ...prev, [taskId]: '' }));
           setSubmittingTaskId(null);
           setSubmissionProgress(0);
+          setSelectedTaskId('');
 
           // Close active card automatically after visual notification display
           setTimeout(() => {
@@ -183,6 +201,97 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         }
       }
     }, 250);
+  };
+
+  // Submit Student Self Attendance
+  const handleSubmitAttendance = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate class selection
+    const classToRegister = db.classes.find(c => c.id === (selectedAttendanceClassId || db.classes[0]?.id));
+    if (!classToRegister) {
+      setAttendanceErrorMessage("Silakan pilih mata pelajaran sekolah terlebih dahulu.");
+      return;
+    }
+
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    // Check if attendance already exists for today
+    const alreadyCheckedIn = db.attendance.some(
+      a => a.studentId === currentUser.id && a.classId === classToRegister.id && a.date === todayStr
+    );
+
+    if (alreadyCheckedIn) {
+      setAttendanceErrorMessage(`Anda sudah melakukan absen mandiri untuk mata pelajaran ${classToRegister.name} hari ini.`);
+      return;
+    }
+
+    setAttendanceErrorMessage(null);
+    setAttendanceSuccessMessage(null);
+    setIsSubmittingAttendance(true);
+    setAttendanceProgress(0);
+
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += 20;
+      setAttendanceProgress(progress);
+
+      if (progress >= 100) {
+        clearInterval(interval);
+
+        const newAttendance: Attendance = {
+          id: `a-${Date.now()}`,
+          date: todayStr,
+          classId: classToRegister.id,
+          className: classToRegister.name,
+          studentId: currentUser.id,
+          studentName: currentUser.name,
+          status: attendanceStatusChoice
+        };
+
+        onUpdateDb(prev => ({
+          ...prev,
+          attendance: [...prev.attendance, newAttendance]
+        }));
+
+        // Send notification to Guru
+        sendNotification(
+          "u-guru-1",
+          `Absensi Siswa Baru: ${currentUser.name}`,
+          `${currentUser.name} telah mengirimkan status kehadiran "${attendanceStatusChoice.toUpperCase()}" untuk mata pelajaran "${classToRegister.name}" hari ini.${attendanceReason ? ` Catatan: "${attendanceReason}"` : ''}`,
+          'attendance'
+        );
+
+        // Send notification to student themselves
+        sendNotification(
+          currentUser.id,
+          `✅ Presensi Dicatat: ${classToRegister.name}`,
+          `Pencatatan presensi Anda sebesar "${attendanceStatusChoice.toUpperCase()}" hari ini berhasil diverifikasi oleh sistem.`,
+          'attendance'
+        );
+
+        // Send notification to parent
+        const parent = db.users.find(u => u.role === 'orangtua' && u.studentId === currentUser.id);
+        if (parent) {
+          sendNotification(
+            parent.id,
+            `📢 Laporan Kehadiran Hari ini: ${currentUser.name}`,
+            `Anak Anda, ${currentUser.name}, telah mencatatkan status absensi "${attendanceStatusChoice.toUpperCase()}" untuk ${classToRegister.name} pada ${todayStr}.`,
+            'attendance'
+          );
+        }
+
+        setAttendanceSuccessMessage(`Selesai! Absensi Anda ("${attendanceStatusChoice.toUpperCase()}") untuk mata pelajaran ${classToRegister.name} berhasil tersimpan.`);
+        setAttendanceReason('');
+        setIsSubmittingAttendance(false);
+        setAttendanceProgress(0);
+
+        // Reset status alert after some time
+        setTimeout(() => {
+          setAttendanceSuccessMessage(null);
+        }, 5000);
+      }
+    }, 150);
   };
 
   // Compute grading average for student
@@ -331,7 +440,12 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         >
           {/* DASHBOARD KIRIM TUGAS SUB-TAB */}
           {activeTab === 'kirim-tugas' && (() => {
-            const currentSelectedTask = myTasks.find(t => t.id === (selectedTaskId || (todoTasks[0]?.id || '')));
+            const currentSelectedTask = todoTasks.find(t => t.id === selectedTaskId) || todoTasks[0];
+            const currentTaskId = currentSelectedTask?.id || '';
+            const textValue = draftTexts[currentTaskId] || '';
+            const fileValue = draftFiles[currentTaskId] || '';
+            const errorValue = draftErrors[currentTaskId] || null;
+
             return (
               <div id="panel-dashboard-kirim" className="space-y-6">
                 <div className="bg-gradient-to-r from-indigo-600 to-blue-700 rounded-3xl p-6 sm:p-8 text-white relative overflow-hidden shadow-lg border border-indigo-400/20">
@@ -379,9 +493,6 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                           value={currentSelectedTask?.id || ''}
                           onChange={(e) => {
                             setSelectedTaskId(e.target.value);
-                            setSubmissionText('');
-                            setSimulatedFileName('');
-                            setSubmitError(null);
                           }}
                           className="w-full text-xs font-bold p-3.5 bg-white border border-slate-205 rounded-xl focus:border-indigo-505 focus:outline-none cursor-pointer shadow-xs text-slate-800 transition-all"
                         >
@@ -416,13 +527,13 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                           <label className="block text-xs font-black text-slate-700 uppercase tracking-wider">
                             2. Tulis Jawaban / Uraian Akademik:
                           </label>
-                          <span className="text-[10px] font-mono text-slate-400">{submissionText.length} karakter</span>
+                          <span className="text-[10px] font-mono text-slate-400">{textValue.length} karakter</span>
                         </div>
                         <textarea
                           id="dashboard-homework-content"
                           rows={6}
-                          value={submissionText}
-                          onChange={(e) => setSubmissionText(e.target.value)}
+                          value={textValue}
+                          onChange={(e) => setDraftTexts(prev => ({ ...prev, [currentTaskId]: e.target.value }))}
                           placeholder="Tuliskan di sini argumen ilmiah, hasil pengamatan lab, ulasan literatur, atau rangkuman lengkap jawaban Anda secara santun dan jelas..."
                           className="w-full text-xs p-3.5 bg-white/70 border border-slate-200 rounded-xl focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 leading-relaxed font-medium transition-all"
                         />
@@ -437,7 +548,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                           id="dashboard-dropzone"
                           onDragOver={handleDragOver}
                           onDragLeave={handleDragLeave}
-                          onDrop={handleDrop}
+                          onDrop={(e) => handleDrop(e, currentTaskId)}
                           className={`border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-all ${
                             isDragOver ? 'border-indigo-600 bg-indigo-50/50 scale-[1.01]' : 'border-slate-300 bg-white/40 hover:bg-white/75'
                           }`}
@@ -445,13 +556,13 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                           <input 
                             id="dashboard-file-input"
                             type="file" 
-                            onChange={handleFileSelect} 
+                            onChange={(e) => handleFileSelect(e, currentTaskId)} 
                             className="hidden" 
                           />
                           <label htmlFor="dashboard-file-input" className="cursor-pointer">
                             <Upload className="w-8 h-8 text-indigo-500 mx-auto mb-2 animate-bounce" />
                             <p className="text-xs font-bold text-slate-700">
-                              {simulatedFileName ? `File Terpilih: ${simulatedFileName}` : 'Seret file (PDF, Docx, JPEG) ke sini'}
+                              {fileValue ? `File Terpilih: ${fileValue}` : 'Seret file (PDF, Docx, JPEG) ke sini'}
                             </p>
                             <p className="text-[10px] text-slate-400 mt-1">Atau klik untuk menelusuri file lokal komputer simulator.</p>
                           </label>
@@ -506,7 +617,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                             : 'bg-rose-50 border-rose-200 text-rose-950'
                         }`}>
                           {submissionStatus[currentSelectedTask.id]?.success ? (
-                            <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                             <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
                           ) : (
                             <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
                           )}
@@ -521,7 +632,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                               <div className="space-y-1 mt-2 p-2 bg-white/70 text-[10px] text-slate-500 rounded-lg border border-emerald-100 font-medium">
                                 <span className="block font-bold text-emerald-800 text-[9px] uppercase">Alur Otomatisasi Terkirim:</span>
                                 <p>• Berkas diproses di Cloud Firestore.</p>
-                                <p>• Notifikasi push dengan status "Selesai Dikirim" berhasi dikirim ke Guru Pengampu & Orang Tua.</p>
+                                <p>• Notifikasi push dengan status "Selesai Dikirim" berhasil dikirim ke Guru Pengampu & Orang Tua.</p>
                                 <p>• Tab notifikasi siswa dipicu aktif.</p>
                               </div>
                             )}
@@ -529,9 +640,9 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                         </div>
                       )}
 
-                      {submitError && (
+                      {errorValue && (
                         <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold rounded-xl text-left">
-                          ⚠️ {submitError}
+                          ⚠️ {errorValue}
                         </div>
                       )}
 
@@ -669,9 +780,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                             onClick={() => {
                               const nextId = isExpanded ? null : task.id;
                               setExpandedTaskId(nextId);
-                              setSubmissionText('');
-                              setSimulatedFileName('');
-                              setSubmitError(null);
+                              setDraftErrors(prev => ({ ...prev, [task.id]: null }));
                             }}
                             className="p-5 flex items-center justify-between cursor-pointer hover:bg-white/35 transition-colors"
                           >
