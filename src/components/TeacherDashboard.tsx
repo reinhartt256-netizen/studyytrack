@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { DatabaseState, Class, Task, Submission, Attendance, User } from '../types';
 import { 
   Users, BookOpen, Plus, Calendar, FileText, CheckCircle, 
-  AlertCircle, Star, MessageSquare, ClipboardList, Check, TrendingUp, Info
+  AlertCircle, Star, MessageSquare, ClipboardList, Check, TrendingUp, Info, LogOut
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -11,13 +11,15 @@ interface TeacherDashboardProps {
   currentUser: User;
   onUpdateDb: (updater: (prev: DatabaseState) => DatabaseState) => void;
   sendNotification: (userId: string, title: string, message: string, type: 'task' | 'grade' | 'attendance' | 'announcement') => void;
+  onLogout?: () => void;
 }
 
 export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   db,
   currentUser,
   onUpdateDb,
-  sendNotification
+  sendNotification,
+  onLogout
 }) => {
   const [activeTab, setActiveTab] = useState<'kelas' | 'tugas' | 'koreksi' | 'presensi'>('kelas');
   
@@ -237,26 +239,42 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
               referrerPolicy="no-referrer"
             />
             <div>
-              <p className="text-sm font-semibold text-blue-700 uppercase tracking-wider">Dashboard Pendidik</p>
+              <p className="text-sm font-semibold text-blue-700 uppercase tracking-wider">
+                {currentUser.academicTitle === 'Dosen' ? 'Portal Akademik Dosen' : 'Dashboard Pendidik'}
+              </p>
               <h1 className="text-2xl font-extrabold text-slate-900">{currentUser.name}</h1>
-              <p className="text-xs text-slate-500 mt-0.5">{currentUser.email} • SMA Negeri 1 Jakarta</p>
+              <p className="text-xs text-slate-500 mt-0.5">{currentUser.email} • {currentUser.institution || 'SMA Negeri 1 Jakarta'}</p>
             </div>
           </div>
 
-          {/* Quick Metrics */}
-          <div className="grid grid-cols-3 gap-2 sm:gap-4">
-            <div className="bg-blue-600/10 border border-blue-500/20 backdrop-blur-sm rounded-2xl p-3 text-center">
-              <span className="block text-slate-500 text-[10px] font-bold uppercase tracking-wider">Total Kelas</span>
-              <span className="text-xl font-extrabold text-blue-700">{db.classes.length}</span>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+            {/* Quick Metrics */}
+            <div className="grid grid-cols-3 gap-2 sm:gap-4">
+              <div className="bg-blue-600/10 border border-blue-500/20 backdrop-blur-sm rounded-2xl p-3 text-center min-w-[85px]">
+                <span className="block text-slate-500 text-[10px] font-bold uppercase tracking-wider">Total Kelas</span>
+                <span className="text-xl font-extrabold text-blue-700">{db.classes.length}</span>
+              </div>
+              <div className="bg-emerald-600/10 border border-emerald-500/20 backdrop-blur-sm rounded-2xl p-3 text-center min-w-[85px]">
+                <span className="block text-slate-500 text-[10px] font-bold uppercase tracking-wider">Rata Nilai</span>
+                <span className="text-xl font-extrabold text-emerald-700">{averageScore}</span>
+              </div>
+              <div className="bg-amber-600/10 border border-amber-500/20 backdrop-blur-sm rounded-2xl p-3 text-center min-w-[85px]">
+                <span className="block text-slate-500 text-[10px] font-bold uppercase tracking-wider">Butuh Periksa</span>
+                <span className="text-xl font-extrabold text-amber-700">{pendingCount}</span>
+              </div>
             </div>
-            <div className="bg-emerald-600/10 border border-emerald-500/20 backdrop-blur-sm rounded-2xl p-3 text-center">
-              <span className="block text-slate-500 text-[10px] font-bold uppercase tracking-wider">Rata Nilai</span>
-              <span className="text-xl font-extrabold text-emerald-700">{averageScore}</span>
-            </div>
-            <div className="bg-amber-600/10 border border-amber-500/20 backdrop-blur-sm rounded-2xl p-3 text-center">
-              <span className="block text-slate-500 text-[10px] font-bold uppercase tracking-wider">Butuh Diperiksa</span>
-              <span className="text-xl font-extrabold text-amber-700">{pendingCount}</span>
-            </div>
+
+            {/* Logout Button */}
+            {onLogout && (
+              <button
+                id="btn-teacher-logout"
+                onClick={onLogout}
+                className="flex items-center justify-center gap-2 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 font-extrabold text-xs px-5 py-3 rounded-2xl shadow-2xs transition-all hover:scale-[1.02] cursor-pointer"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Keluar Portal</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

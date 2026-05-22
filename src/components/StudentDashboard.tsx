@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { DatabaseState, Task, Submission, User, Notification } from '../types';
 import { 
   BookOpen, Calendar, ChevronRight, CheckCircle, Clock, 
-  Upload, FileText, Bell, AlertTriangle, ArrowRight, Award, Trash2
+  Upload, FileText, Bell, AlertTriangle, ArrowRight, Award, Trash2, LogOut
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -11,13 +11,15 @@ interface StudentDashboardProps {
   currentUser: User;
   onUpdateDb: (updater: (prev: DatabaseState) => DatabaseState) => void;
   sendNotification: (userId: string, title: string, message: string, type: 'task' | 'grade' | 'attendance' | 'announcement') => void;
+  onLogout?: () => void;
 }
 
 export const StudentDashboard: React.FC<StudentDashboardProps> = ({
   db,
   currentUser,
   onUpdateDb,
-  sendNotification
+  sendNotification,
+  onLogout
 }) => {
   const [activeTab, setActiveTab] = useState<'tugas' | 'kirim-tugas' | 'kehadiran' | 'notifikasi'>('kirim-tugas');
   const [filter, setFilter] = useState<'todo' | 'done'>('todo');
@@ -222,23 +224,37 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                 <h1 className="text-2xl font-extrabold text-slate-900">{currentUser.name}</h1>
                 <span className="text-[10px] bg-blue-100 text-blue-800 font-bold px-2.5 py-0.5 rounded-full">Active</span>
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">Siswa Kelas: <strong className="text-slate-700">{studentClass}</strong> • SMA Negeri 1 Jakarta</p>
+              <p className="text-xs text-slate-500 mt-0.5">Siswa Kelas: <strong className="text-slate-700">{studentClass}</strong> • {currentUser.institution || 'SMA Negeri 1 Jakarta'}</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 sm:gap-4">
-            <div className="bg-blue-600/10 border border-blue-500/20 backdrop-blur-sm rounded-xl p-3 text-center">
-              <span className="block text-slate-505 text-[10px] font-bold uppercase tracking-wider text-slate-500">Tugas Tersisa</span>
-              <span className="text-xl font-extrabold text-blue-700">{todoTasks.length}</span>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 flex-1">
+              <div className="bg-blue-600/10 border border-blue-500/20 backdrop-blur-sm rounded-xl p-3 text-center min-w-[85px]">
+                <span className="block text-slate-505 text-[10px] font-bold uppercase tracking-wider text-slate-500">Tugas Sisa</span>
+                <span className="text-xl font-extrabold text-blue-700">{todoTasks.length}</span>
+              </div>
+              <div className="bg-emerald-600/10 border border-emerald-500/20 backdrop-blur-sm rounded-xl p-3 text-center min-w-[85px]">
+                <span className="block text-slate-505 text-[10px] font-bold uppercase tracking-wider text-slate-500">Rata Nilai</span>
+                <span className="text-xl font-extrabold text-emerald-700">{avgGrade !== '-' ? `${avgGrade}%` : '-'}</span>
+              </div>
+              <div className="bg-amber-600/10 border border-amber-500/20 backdrop-blur-sm rounded-xl p-3 text-center min-w-[85px]">
+                <span className="block text-slate-505 text-[10px] font-bold uppercase tracking-wider text-slate-500">Presensi</span>
+                <span className="text-xl font-extrabold text-amber-700">{attendancePercentage}%</span>
+              </div>
             </div>
-            <div className="bg-emerald-600/10 border border-emerald-500/20 backdrop-blur-sm rounded-xl p-3 text-center">
-              <span className="block text-slate-505 text-[10px] font-bold uppercase tracking-wider text-slate-500">Rata Nilai</span>
-              <span className="text-xl font-extrabold text-emerald-700">{avgGrade !== '-' ? `${avgGrade}%` : '-'}</span>
-            </div>
-            <div className="bg-amber-600/10 border border-amber-500/20 backdrop-blur-sm rounded-xl p-3 text-center">
-              <span className="block text-slate-505 text-[10px] font-bold uppercase tracking-wider text-slate-500">Presensi</span>
-              <span className="text-xl font-extrabold text-amber-700">{attendancePercentage}%</span>
-            </div>
+
+            {/* Logout Button */}
+            {onLogout && (
+              <button
+                id="btn-student-logout"
+                onClick={onLogout}
+                className="flex items-center justify-center gap-2 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 font-extrabold text-xs px-5 py-3 rounded-xl shadow-2xs transition-all hover:scale-[1.02] cursor-pointer"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Keluar Portal</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

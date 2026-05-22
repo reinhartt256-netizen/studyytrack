@@ -9,6 +9,8 @@ export interface User {
   password?: string; // credential field
   className?: string; // used for students
   studentId?: string; // used for parents to link to their child
+  institution?: string; // e.g. "SMA Negeri 1" or "Universitas Indonesia"
+  academicTitle?: string; // e.g., "Guru" or "Dosen"
 }
 
 export interface Class {

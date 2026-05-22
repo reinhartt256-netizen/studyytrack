@@ -2,7 +2,7 @@ import React from 'react';
 import { DatabaseState, User, Notification, Submission, Attendance } from '../types';
 import { 
   Heart, Calendar, Award, Star, Bell, Activity, CheckCircle, 
-  MessageSquare, UserCheck, ChevronRight, TrendingUp, HelpCircle
+  MessageSquare, UserCheck, ChevronRight, TrendingUp, HelpCircle, LogOut
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -10,12 +10,14 @@ interface ParentDashboardProps {
   db: DatabaseState;
   currentUser: User;
   onUpdateDb: (updater: (prev: DatabaseState) => DatabaseState) => void;
+  onLogout?: () => void;
 }
 
 export const ParentDashboard: React.FC<ParentDashboardProps> = ({
   db,
   currentUser,
-  onUpdateDb
+  onUpdateDb,
+  onLogout
 }) => {
   // Resolve linked student
   const student = db.users.find(u => u.id === currentUser.studentId);
@@ -68,12 +70,25 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <span className="flex h-3.5 w-3.5 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500"></span>
-            </span>
-            <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">Terhubung Real-Time Dengan Sekolah</span>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+            <div className="flex items-center gap-3 bg-emerald-50/60 border border-emerald-100 rounded-2xl px-4 py-2.5">
+              <span className="flex h-3 w-3 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+              </span>
+              <span className="text-[10px] text-emerald-800 font-extrabold uppercase tracking-wider">Terhubung Real-Time</span>
+            </div>
+
+            {onLogout && (
+              <button
+                id="btn-parent-logout"
+                onClick={onLogout}
+                className="flex items-center justify-center gap-2 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 font-extrabold text-xs px-5 py-3 rounded-xl shadow-2xs transition-all hover:scale-[1.02] cursor-pointer"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Keluar Portal</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

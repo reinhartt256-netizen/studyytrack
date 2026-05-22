@@ -271,6 +271,7 @@ export default function App() {
                 currentUser={currentUser}
                 onUpdateDb={handleUpdateDb}
                 sendNotification={sendNotification}
+                onLogout={() => setIsDemoMode(false)}
               />
             )}
 
@@ -280,6 +281,7 @@ export default function App() {
                 currentUser={currentUser}
                 onUpdateDb={handleUpdateDb}
                 sendNotification={sendNotification}
+                onLogout={() => setIsDemoMode(false)}
               />
             )}
 
@@ -288,6 +290,7 @@ export default function App() {
                 db={dbState}
                 currentUser={currentUser}
                 onUpdateDb={handleUpdateDb}
+                onLogout={() => setIsDemoMode(false)}
               />
             )}
           </div>

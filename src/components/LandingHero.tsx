@@ -40,6 +40,8 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regRole, setRegRole] = useState<UserRole>('guru');
+  const [regAcademicTitle, setRegAcademicTitle] = useState<'Guru' | 'Dosen'>('Guru');
+  const [regInstitution, setRegInstitution] = useState('SMA Negeri 1 Jakarta');
   const [regClass, setRegClass] = useState('Kelas 10-A IPA');
   const [regLinkedStudentId, setRegLinkedStudentId] = useState('');
   const [showRegPassword, setShowRegPassword] = useState(false);
@@ -219,7 +221,8 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
       avatar: chosenAvatar,
       password: regPassword,
       ...(regRole === 'siswa' ? { className: regClass.trim() || 'Kelas 10-A IPA' } : {}),
-      ...(regRole === 'orangtua' ? { studentId: regLinkedStudentId } : {})
+      ...(regRole === 'orangtua' ? { studentId: regLinkedStudentId } : {}),
+      ...(regRole === 'guru' ? { academicTitle: regAcademicTitle, institution: regInstitution.trim() || 'SMA Negeri 1 Jakarta' } : {})
     };
 
     setRegSuccess('Akun berhasil dibuat! Menghubungkan ke dasbor...');
@@ -441,7 +444,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                         onChange={(e) => setRegRole(e.target.value as UserRole)}
                         className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200/80 rounded-xl text-slate-700 focus:bg-white focus:border-emerald-500 focus:outline-none transition-all font-sans font-bold"
                       >
-                        <option value="guru">Mata Pelajaran (Guru)</option>
+                        <option value="guru">Guru / Dosen Pengampu</option>
                         <option value="siswa">Siswa Pembelajar (Siswa)</option>
                         <option value="orangtua">Wali Murid (Orang Tua)</option>
                       </select>
@@ -480,9 +483,52 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                     )}
 
                     {regRole === 'guru' && (
-                      <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-2.5 text-center flex flex-col justify-center">
-                        <span className="text-[10px] text-emerald-800 font-extrabold uppercase">SMA Negeri 1 Jakarta</span>
-                        <span className="text-[9px] text-slate-500 mt-0.5">Institusi digital terdaftar</span>
+                      <div className="bg-emerald-50/75 border border-emerald-200/60 rounded-xl p-3 text-left animate-fade-in flex flex-col gap-2.5">
+                        <div>
+                          <label className="block text-[9px] font-black text-emerald-800 uppercase tracking-wider mb-1">Status Akademisi</label>
+                          <div className="flex gap-1 bg-white/90 p-0.5 border border-emerald-200/40 rounded-lg">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setRegAcademicTitle('Guru');
+                                setRegInstitution('SMA Negeri 1 Jakarta');
+                              }}
+                              className={`flex-1 text-[10px] py-1 px-1.5 rounded font-black transition-all cursor-pointer ${
+                                regAcademicTitle === 'Guru'
+                                  ? 'bg-emerald-600 text-white shadow-xs'
+                                  : 'text-slate-500 hover:text-slate-800'
+                              }`}
+                            >
+                              🏫 Guru
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setRegAcademicTitle('Dosen');
+                                setRegInstitution('Universitas Indonesia');
+                              }}
+                              className={`flex-1 text-[10px] py-1 px-1.5 rounded font-black transition-all cursor-pointer ${
+                                regAcademicTitle === 'Dosen'
+                                  ? 'bg-emerald-600 text-white shadow-xs'
+                                  : 'text-slate-500 hover:text-slate-800'
+                              }`}
+                            >
+                              🎓 Dosen
+                            </button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-[9px] font-black text-emerald-800 uppercase tracking-wider mb-1">Nama Institusi / Kampus / Sekolah</label>
+                          <input
+                            type="text"
+                            required
+                            placeholder={regAcademicTitle === 'Guru' ? 'SMA Negeri 1 Jakarta' : 'Universitas Indonesia'}
+                            value={regInstitution}
+                            onChange={(e) => setRegInstitution(e.target.value)}
+                            className="w-full text-[10px] px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg focus:border-emerald-500 focus:outline-none transition-all font-bold text-slate-800 placeholder-slate-400"
+                          />
+                        </div>
                       </div>
                     )}
                   </div>
