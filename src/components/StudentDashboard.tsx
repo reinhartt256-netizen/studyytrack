@@ -19,8 +19,9 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
   onUpdateDb,
   sendNotification
 }) => {
-  const [activeTab, setActiveTab] = useState<'tugas' | 'kehadiran' | 'notifikasi'>('tugas');
+  const [activeTab, setActiveTab] = useState<'tugas' | 'kirim-tugas' | 'kehadiran' | 'notifikasi'>('kirim-tugas');
   const [filter, setFilter] = useState<'todo' | 'done'>('todo');
+  const [selectedTaskId, setSelectedTaskId] = useState<string>('');
 
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
   const [submissionText, setSubmissionText] = useState('');
@@ -246,6 +247,22 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         {/* Navigation Tabs */}
         <div className="flex border-b border-slate-200/55 gap-1.5 overflow-x-auto pb-px mb-6">
           <button
+            id="tab-student-kirim"
+            onClick={() => setActiveTab('kirim-tugas')}
+            className={`flex items-center gap-2 px-5 py-3 border-b-2 font-bold text-sm transition-all whitespace-nowrap cursor-pointer ${
+              activeTab === 'kirim-tugas'
+                ? 'border-indigo-600 text-indigo-700 bg-white/50 backdrop-blur-sm shadow-[0_-2px_6px_rgba(99,102,241,0.06)]'
+                : 'border-transparent text-slate-500 hover:text-indigo-600 hover:bg-white/20'
+            }`}
+          >
+            <Upload className="w-4 h-4 text-indigo-600" />
+            <span className="flex items-center gap-1.5">
+              Dashboard Kirim Tugas
+              <span className="bg-gradient-to-r from-indigo-500 to-blue-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider animate-pulse">Kirim</span>
+            </span>
+          </button>
+
+          <button
             id="tab-student-tugas"
             onClick={() => setActiveTab('tugas')}
             className={`flex items-center gap-2 px-5 py-3 border-b-2 font-bold text-sm transition-all whitespace-nowrap cursor-pointer ${
@@ -254,8 +271,8 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                 : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-white/20'
             }`}
           >
-            <BookOpen className="w-4 h-4 text-blue-605" />
-            <span>Tugas Sekolah ({myTasks.length})</span>
+            <BookOpen className="w-4 h-4 text-blue-600" />
+            <span>Panduan & List Tugas ({myTasks.length})</span>
           </button>
 
           <button
@@ -296,6 +313,297 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2 }}
         >
+          {/* DASHBOARD KIRIM TUGAS SUB-TAB */}
+          {activeTab === 'kirim-tugas' && (() => {
+            const currentSelectedTask = myTasks.find(t => t.id === (selectedTaskId || (todoTasks[0]?.id || '')));
+            return (
+              <div id="panel-dashboard-kirim" className="space-y-6">
+                <div className="bg-gradient-to-r from-indigo-600 to-blue-700 rounded-3xl p-6 sm:p-8 text-white relative overflow-hidden shadow-lg border border-indigo-400/20">
+                  <div className="absolute top-[-20%] right-[-10%] w-[350px] h-[350px] rounded-full bg-indigo-500/25 blur-[60px] pointer-events-none"></div>
+                  <div className="relative z-10 space-y-2">
+                    <span className="bg-indigo-500/40 border border-indigo-300/30 font-black text-[10px] tracking-wider uppercase px-3 py-1 rounded-full text-indigo-100">
+                      Terminal Pengumpulan Mandiri SMAN 1
+                    </span>
+                    <h2 className="text-2xl sm:text-3xl font-black tracking-tight mt-1">Dashboard Pengumpulan Tugas Rumah</h2>
+                    <p className="text-xs sm:text-sm text-indigo-100/90 max-w-2xl font-medium leading-relaxed">
+                      Kirim laporan praktikum, lembar jawaban, atau uraian argumen akademis Anda secara instan ke cloud Firestore. Sistem akan mengabarkan status pengiriman ("Selesai Dikirim" / "Gagal") ke tab Notifikasi siswa, guru pengampu, dan orang tua Anda secara otomatis.
+                    </p>
+                  </div>
+                </div>
+
+                {todoTasks.length === 0 ? (
+                  <div className="bg-white/70 backdrop-blur-md p-10 text-center rounded-2xl border border-emerald-200 shadow-sm space-y-4">
+                    <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto text-emerald-600">
+                      <CheckCircle className="w-8 h-8" />
+                    </div>
+                    <div className="max-w-md mx-auto space-y-1">
+                      <h3 className="text-xl font-extrabold text-slate-800">Semua Tugas Selesai Dikirim!</h3>
+                      <p className="text-xs text-slate-500 font-medium leading-normal">
+                        Luar biasa! Tidak ada tanggungan tugas sekolah tersisa untuk dikirimkan hari ini. Semua data pekerjaan rumah Anda telah berhasil divalidasi ke cloud database dengan status selesai dikirim.
+                      </p>
+                    </div>
+                    <button 
+                      onClick={() => setActiveTab('tugas')} 
+                      className="bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-705 text-xs font-bold px-5 py-2.5 rounded-xl cursor-pointer inline-flex items-center gap-2 transition-colors text-slate-700"
+                    >
+                      <span>Lihat Riwayat & Nilai Tugas Saya</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    {/* Left Column: Form submission controls */}
+                    <div className="lg:col-span-7 bg-white/60 backdrop-blur-md p-6 rounded-2xl border border-white/70 shadow-xs space-y-5">
+                      <div className="space-y-1.5 text-left">
+                        <label className="block text-xs font-black text-slate-700 uppercase tracking-wider">
+                          1. Pilih Judul Penugasan Sekolah:
+                        </label>
+                        <select 
+                          id="select-dashboard-assignment"
+                          value={currentSelectedTask?.id || ''}
+                          onChange={(e) => {
+                            setSelectedTaskId(e.target.value);
+                            setSubmissionText('');
+                            setSimulatedFileName('');
+                            setSubmitError(null);
+                          }}
+                          className="w-full text-xs font-bold p-3.5 bg-white border border-slate-205 rounded-xl focus:border-indigo-505 focus:outline-none cursor-pointer shadow-xs text-slate-800 transition-all"
+                        >
+                          {todoTasks.map(t => (
+                            <option key={t.id} value={t.id} className="font-semibold py-1">
+                              [{t.className.replace('Kelas ', '')}] {t.title} — Batas: {t.dueDate}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {currentSelectedTask && (
+                        <div className="p-4 bg-indigo-50/50 rounded-xl border border-indigo-100/60 text-left space-y-2">
+                          <div className="flex items-center justify-between flex-wrap gap-2 text-[10px] uppercase font-black tracking-wider text-indigo-700">
+                            <span>📋 Rincian Persyaratan Tugas</span>
+                            <span>Mata Pelajaran: {currentSelectedTask.className}</span>
+                          </div>
+                          <p className="text-xs text-slate-600 leading-relaxed font-semibold">
+                            {currentSelectedTask.description}
+                          </p>
+                          <div className="flex items-center gap-2 mt-2 pt-2 border-t border-indigo-100/40 text-[10px] text-slate-400">
+                            <span>Maks Nilai: <strong className="text-indigo-600 font-bold">{currentSelectedTask.maxScore} Poin</strong></span>
+                            <span>•</span>
+                            <span>Tanggal Pembagian: <strong className="text-indigo-600 font-bold">{currentSelectedTask.assignedDate || 'Hari ini'}</strong></span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Answer writing and submission text */}
+                      <div className="space-y-1.5 text-left">
+                        <div className="flex justify-between items-center">
+                          <label className="block text-xs font-black text-slate-700 uppercase tracking-wider">
+                            2. Tulis Jawaban / Uraian Akademik:
+                          </label>
+                          <span className="text-[10px] font-mono text-slate-400">{submissionText.length} karakter</span>
+                        </div>
+                        <textarea
+                          id="dashboard-homework-content"
+                          rows={6}
+                          value={submissionText}
+                          onChange={(e) => setSubmissionText(e.target.value)}
+                          placeholder="Tuliskan di sini argumen ilmiah, hasil pengamatan lab, ulasan literatur, atau rangkuman lengkap jawaban Anda secara santun dan jelas..."
+                          className="w-full text-xs p-3.5 bg-white/70 border border-slate-200 rounded-xl focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 leading-relaxed font-medium transition-all"
+                        />
+                      </div>
+
+                      {/* Upload zone */}
+                      <div className="space-y-1.5 text-left">
+                        <label className="block text-xs font-black text-slate-700 uppercase tracking-wider">
+                          3. Unggah Berkas Lampiran / PDF (Opsional):
+                        </label>
+                        <div 
+                          id="dashboard-dropzone"
+                          onDragOver={handleDragOver}
+                          onDragLeave={handleDragLeave}
+                          onDrop={handleDrop}
+                          className={`border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-all ${
+                            isDragOver ? 'border-indigo-600 bg-indigo-50/50 scale-[1.01]' : 'border-slate-300 bg-white/40 hover:bg-white/75'
+                          }`}
+                        >
+                          <input 
+                            id="dashboard-file-input"
+                            type="file" 
+                            onChange={handleFileSelect} 
+                            className="hidden" 
+                          />
+                          <label htmlFor="dashboard-file-input" className="cursor-pointer">
+                            <Upload className="w-8 h-8 text-indigo-500 mx-auto mb-2 animate-bounce" />
+                            <p className="text-xs font-bold text-slate-700">
+                              {simulatedFileName ? `File Terpilih: ${simulatedFileName}` : 'Seret file (PDF, Docx, JPEG) ke sini'}
+                            </p>
+                            <p className="text-[10px] text-slate-400 mt-1">Atau klik untuk menelusuri file lokal komputer simulator.</p>
+                          </label>
+                        </div>
+                      </div>
+
+                      {/* Connection quality simulator toggle */}
+                      <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between gap-3">
+                        <div className="text-left space-y-0.5">
+                          <span className="block text-xs font-bold text-slate-700">Parameter Kualitas Jaringan</span>
+                          <span className="block text-[10px] text-slate-400 font-medium">Uji skenario kendala koneksi transmisi data.</span>
+                        </div>
+                        {currentSelectedTask && (
+                          <label className="flex items-center gap-2 cursor-pointer bg-white border border-slate-200 px-3 py-1.5 rounded-lg shadow-2xs hover:bg-slate-50 transition-colors">
+                            <input 
+                              type="checkbox" 
+                              checked={simulateFailure[currentSelectedTask.id] || false}
+                              onChange={(e) => setSimulateFailure(prev => ({ ...prev, [currentSelectedTask.id]: e.target.checked }))}
+                              className="rounded border-slate-300 text-rose-600 focus:ring-rose-500 w-4 h-4 cursor-pointer"
+                            />
+                            <span className="text-xs font-extrabold text-rose-700 flex items-center gap-1">
+                              💡 Simulasikan Jaringan Gagal
+                            </span>
+                          </label>
+                        )}
+                      </div>
+
+                      {/* Submit Alerts, Progress, Errors */}
+                      {currentSelectedTask && submittingTaskId === currentSelectedTask.id && (
+                        <div className="space-y-2 p-4 bg-indigo-50 rounded-xl border border-indigo-100 text-left shadow-2xs">
+                          <div className="flex justify-between text-xs font-extrabold text-indigo-800">
+                            <span className="flex items-center gap-2 animate-pulse">
+                              <span className="animate-spin border-2 border-indigo-700 border-t-transparent rounded-full w-3.5 h-3.5"></span>
+                              Mentransmisikan data tugas ke database Cloud Firestore...
+                            </span>
+                            <span>{submissionProgress}%</span>
+                          </div>
+                          <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                            <div 
+                              className="bg-indigo-600 h-2 rounded-full transition-all duration-300" 
+                              style={{ width: `${submissionProgress}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Dynamic Success or Failure Status Alerts */}
+                      {currentSelectedTask && submissionStatus[currentSelectedTask.id] && (
+                        <div className={`p-4 rounded-xl border text-xs leading-relaxed text-left flex items-start gap-3 shadow-md ${
+                          submissionStatus[currentSelectedTask.id]?.success
+                            ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                            : 'bg-rose-50 border-rose-200 text-rose-950'
+                        }`}>
+                          {submissionStatus[currentSelectedTask.id]?.success ? (
+                            <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                          ) : (
+                            <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                          )}
+                          <div>
+                            <p className="font-extrabold text-sm uppercase tracking-wider flex items-center gap-1.5">
+                              {submissionStatus[currentSelectedTask.id]?.success ? "✅ Selesai Dikirim ke Database" : "❌ Transmisi Gagal"}
+                            </p>
+                            <p className="font-semibold text-[11px] mt-1 text-slate-700">
+                              {submissionStatus[currentSelectedTask.id]?.message}
+                            </p>
+                            {submissionStatus[currentSelectedTask.id]?.success && (
+                              <div className="space-y-1 mt-2 p-2 bg-white/70 text-[10px] text-slate-500 rounded-lg border border-emerald-100 font-medium">
+                                <span className="block font-bold text-emerald-800 text-[9px] uppercase">Alur Otomatisasi Terkirim:</span>
+                                <p>• Berkas diproses di Cloud Firestore.</p>
+                                <p>• Notifikasi push dengan status "Selesai Dikirim" berhasi dikirim ke Guru Pengampu & Orang Tua.</p>
+                                <p>• Tab notifikasi siswa dipicu aktif.</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {submitError && (
+                        <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold rounded-xl text-left">
+                          ⚠️ {submitError}
+                        </div>
+                      )}
+
+                      {/* Main action submit button */}
+                      {currentSelectedTask && (
+                        <div className="pt-2 text-left">
+                          <button
+                            id="btn-dashboard-submit-tarea"
+                            onClick={() => handleSubmitHomework(currentSelectedTask.id, currentSelectedTask.title)}
+                            disabled={submittingTaskId !== null}
+                            className={`w-full text-xs font-bold py-3.5 rounded-xl text-center shadow-md cursor-pointer transition-all flex items-center justify-center gap-2 ${
+                              submittingTaskId !== null 
+                                ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                                : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white active:scale-[0.99]'
+                            }`}
+                          >
+                            <Upload className="w-4 h-4" />
+                            <span>
+                              {submittingTaskId === currentSelectedTask.id 
+                                ? `Sedang Mengirim & Menyimpan di Database (${submissionProgress}%)...` 
+                                : 'Kumpulkan Pekerjaan Rumah Sekarang'}
+                            </span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Right Column: Tips & live activity metrics */}
+                    <div className="lg:col-span-5 space-y-6">
+                      {/* Submissions tracking history summary */}
+                      <div className="bg-white/60 backdrop-blur-md p-5 rounded-2xl border border-white/70 shadow-xs text-left space-y-4">
+                        <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                          <span className="text-xs font-black text-slate-700 uppercase tracking-wider">Laporan Kiriman Terakhir</span>
+                          <span className="text-[10px] font-bold text-indigo-600 uppercase bg-indigo-50 px-2 py-0.5 rounded">Real-time</span>
+                        </div>
+                        {mySubmissions.length === 0 ? (
+                          <p className="text-xs text-slate-400 font-medium py-3 text-center">Belum ada tugas yang Anda kirimkan.</p>
+                        ) : (
+                          <div className="space-y-3">
+                            {mySubmissions.slice(-3).reverse().map(sub => {
+                              const relatedTask = myTasks.find(t => t.id === sub.taskId);
+                              return (
+                                <div key={sub.id} className="p-3 bg-white border border-slate-100 rounded-lg shadow-3xs space-y-1">
+                                  <div className="flex justify-between items-center text-[10px]">
+                                    <span className="font-extrabold text-blue-700">{relatedTask?.className || 'Pelajaran'}</span>
+                                    <span className="text-slate-400">{new Date(sub.submittedAt).toLocaleDateString('id-ID')}</span>
+                                  </div>
+                                  <h4 className="font-bold text-xs text-slate-800 truncate">{sub.taskTitle}</h4>
+                                  <div className="flex justify-between items-center pt-1">
+                                    <p className="text-[9px] text-slate-400 font-medium truncate max-w-[150px]">{sub.content}</p>
+                                    <span className="text-[9px] bg-emerald-100 text-emerald-800 font-black px-1.5 py-0.5 rounded">
+                                      ✓ Selesai Dikirim
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Guidelines and instructions card */}
+                      <div className="bg-gradient-to-br from-slate-900 to-indigo-950 p-6 rounded-2xl text-white text-left space-y-3 shadow-md relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-3 opacity-15">
+                          <Award className="w-16 h-16" />
+                        </div>
+                        <h3 className="text-sm font-black uppercase tracking-widest text-indigo-300">💡 Jam Pengumpulan Aman</h3>
+                        <p className="text-xs text-slate-200 leading-normal font-medium leading-relaxed">
+                          Guna menghindari keterlambatan, kumpulkan tugas Anda minimal 4-5 jam sebelum batas waktu. Guru penguji dapat segera memberikan koreksi & umpan balik setelah status diperbarui menjadi <strong className="text-emerald-300">"Selesai Dikirim"</strong> di dashboard guru.
+                        </p>
+                        <div className="border-t border-white/10 pt-3 space-y-2 text-[11px] text-slate-400 font-medium">
+                          <p className="flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
+                            <span>Integrasi Sistem Notifikasi Cerdas</span>
+                          </p>
+                          <p className="flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
+                            <span>Validasi Berkas Lampiran Otomatis</span>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
           {/* TASKS SUB-TAB */}
           {activeTab === 'tugas' && (
             <div id="panel-student-tugas" className="space-y-6">
