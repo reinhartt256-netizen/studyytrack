@@ -146,38 +146,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
             status: 'submitted'
           };
 
-          onUpdateDb(prev => ({
-            ...prev,
-            submissions: [...prev.submissions, newSubmission]
-          }));
-
-          // Trigger notification to Guru
-          sendNotification(
-            "u-guru-1",
-            `Tugas Selesai Dikirim: ${currentUser.name}`,
-            `${currentUser.name} telah selesai mengirimkan tugas pelajaran "${taskTitle}" ke database cloud.`,
-            'task'
-          );
-
-          // Trigger notification to Student themselves (Success notification)
-          sendNotification(
-            currentUser.id,
-            `✅ Selesai Dikirim: ${taskTitle}`,
-            `Pekerjaan rumah Anda untuk penugasan "${taskTitle}" telah berhasil diunggah dengan aman ke database cloud. Status: Selesai Dikirim.`,
-            'task'
-          );
-
-          // Find parents and notify
-          const parent = db.users.find(u => u.role === 'orangtua' && u.studentId === currentUser.id);
-          if (parent) {
-            sendNotification(
-              parent.id,
-              `📋 Tugas Selesai Dikirim: ${currentUser.name}`,
-              `Anak Anda, ${currentUser.name}, telah selesai mengirimkan tugas "${taskTitle}" ke portal sekolah. Status: Selesai Dikirim.`,
-              'task'
-            );
-          }
-
+          // Inform user with immediate client-side feedback first
           setSubmissionStatus(prev => ({
             ...prev,
             [taskId]: {
@@ -186,17 +155,53 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
             }
           }));
 
-          // Clean up form state
-          setDraftTexts(prev => ({ ...prev, [taskId]: '' }));
-          setDraftFiles(prev => ({ ...prev, [taskId]: '' }));
+          // Clean up progress indicator so they see it successfully finished
           setSubmittingTaskId(null);
           setSubmissionProgress(0);
-          setSelectedTaskId('');
 
-          // Close active card automatically after visual notification display
+          // After a comfortable delay (3.5s) we update the central db and close/archive the card
           setTimeout(() => {
+            onUpdateDb(prev => ({
+              ...prev,
+              submissions: [...prev.submissions, newSubmission]
+            }));
+
+            // Trigger notification to Guru
+            sendNotification(
+              "u-guru-1",
+              `Tugas Selesai Dikirim: ${currentUser.name}`,
+              `${currentUser.name} telah selesai mengirimkan tugas pelajaran "${taskTitle}" ke database cloud.`,
+              'task'
+            );
+
+            // Trigger notification to Student themselves (Success notification)
+            sendNotification(
+              currentUser.id,
+              `✅ Selesai Dikirim: ${taskTitle}`,
+              `Pekerjaan rumah Anda untuk penugasan "${taskTitle}" telah berhasil diunggah dengan aman ke database cloud. Status: Selesai Dikirim.`,
+              'task'
+            );
+
+            // Find parents and notify
+            const parent = db.users.find(u => u.role === 'orangtua' && u.studentId === currentUser.id);
+            if (parent) {
+              sendNotification(
+                parent.id,
+                `📋 Tugas Selesai Dikirim: ${currentUser.name}`,
+                `Anak Anda, ${currentUser.name}, telah selesai mengirimkan tugas "${taskTitle}" ke portal sekolah. Status: Selesai Dikirim.`,
+                'task'
+              );
+            }
+
+            // Clean up form state
+            setDraftTexts(prev => ({ ...prev, [taskId]: '' }));
+            setDraftFiles(prev => ({ ...prev, [taskId]: '' }));
+            setSelectedTaskId('');
             setExpandedTaskId(null);
             setSubmissionStatus(prev => ({ ...prev, [taskId]: null }));
+            
+            // Swap to "Selesai Dikirim" to provide reassurance of the uploaded file list
+            setFilter('done');
           }, 3500);
         }
       }
@@ -544,12 +549,13 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                         <label className="block text-xs font-black text-slate-700 uppercase tracking-wider">
                           3. Unggah Berkas Lampiran / PDF (Opsional):
                         </label>
-                        <div 
+                        <label 
                           id="dashboard-dropzone"
+                          htmlFor="dashboard-file-input"
                           onDragOver={handleDragOver}
                           onDragLeave={handleDragLeave}
                           onDrop={(e) => handleDrop(e, currentTaskId)}
-                          className={`border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-all ${
+                          className={`block border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-all ${
                             isDragOver ? 'border-indigo-600 bg-indigo-50/50 scale-[1.01]' : 'border-slate-300 bg-white/40 hover:bg-white/75'
                           }`}
                         >
@@ -559,14 +565,12 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                             onChange={(e) => handleFileSelect(e, currentTaskId)} 
                             className="hidden" 
                           />
-                          <label htmlFor="dashboard-file-input" className="cursor-pointer">
-                            <Upload className="w-8 h-8 text-indigo-500 mx-auto mb-2 animate-bounce" />
-                            <p className="text-xs font-bold text-slate-700">
-                              {fileValue ? `File Terpilih: ${fileValue}` : 'Seret file (PDF, Docx, JPEG) ke sini'}
-                            </p>
-                            <p className="text-[10px] text-slate-400 mt-1">Atau klik untuk menelusuri file lokal komputer simulator.</p>
-                          </label>
-                        </div>
+                          <Upload className="w-8 h-8 text-indigo-500 mx-auto mb-2 animate-bounce" />
+                          <p className="text-xs font-bold text-slate-700">
+                            {fileValue ? `File Terpilih: ${fileValue}` : 'Seret file (PDF, Docx, JPEG) ke sini'}
+                          </p>
+                          <p className="text-[10px] text-slate-400 mt-1">Atau klik untuk menelusuri file lokal komputer simulator.</p>
+                        </label>
                       </div>
 
                       {/* Connection quality simulator toggle */}
@@ -844,12 +848,13 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                                 />
 
                                 {/* Interactive drag and drop representation */}
-                                <div 
+                                <label 
                                   id={`dropzone-${task.id}`}
+                                  htmlFor={`file-input-${task.id}`}
                                   onDragOver={handleDragOver}
                                   onDragLeave={handleDragLeave}
                                   onDrop={(e) => handleDrop(e, task.id)}
-                                  className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-all ${
+                                  className={`block border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-all ${
                                     isDragOver ? 'border-blue-600 bg-blue-100/30 scale-[1.01]' : 'border-slate-350 bg-white/40 hover:bg-white/60'
                                   }`}
                                 >
@@ -859,14 +864,12 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                                     onChange={(e) => handleFileSelect(e, task.id)} 
                                     className="hidden" 
                                   />
-                                  <label htmlFor={`file-input-${task.id}`} className="cursor-pointer">
-                                    <Upload className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-                                    <p className="text-xs font-semibold text-slate-600">
-                                      {draftFiles[task.id] ? `File terpilih: ${draftFiles[task.id]}` : 'Foto Tugas atau Tarik File (PDF, DOCX) Ke Sini'}
-                                    </p>
-                                    <p className="text-[10px] text-slate-400 mt-1">Atau klik untuk menelusuri folder lokal Anda</p>
-                                  </label>
-                                </div>
+                                  <Upload className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                                  <p className="text-xs font-semibold text-slate-600">
+                                    {draftFiles[task.id] ? `File terpilih: ${draftFiles[task.id]}` : 'Foto Tugas atau Tarik File (PDF, DOCX) Ke Sini'}
+                                  </p>
+                                  <p className="text-[10px] text-slate-400 mt-1">Atau klik untuk menelusuri folder lokal Anda</p>
+                                </label>
 
                                 {/* Simulation of interactive delivery conditions (Success vs Network Failure) */}
                                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 bg-slate-100/70 rounded-xl border border-slate-200">
