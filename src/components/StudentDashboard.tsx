@@ -28,6 +28,12 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
   const [isDragOver, setIsDragOver] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  // Real-time submission progress and simulation states
+  const [submittingTaskId, setSubmittingTaskId] = useState<string | null>(null);
+  const [submissionProgress, setSubmissionProgress] = useState<number>(0);
+  const [submissionStatus, setSubmissionStatus] = useState<{ [taskId: string]: { success: boolean; message: string } | null }>({});
+  const [simulateFailure, setSimulateFailure] = useState<{ [taskId: string]: boolean }>({});
+
   // Filter tasks belonging to class
   const studentClass = currentUser.className || "Kelas 10-A IPA";
   const myClassNames = db.classes.map(c => c.name); // Simplified: students have access to all classes in this school
@@ -63,42 +69,106 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
     }
   };
 
-  // Submit Homework Assignment
+  // Submit Homework Assignment with interactive progress and simulated success/failure notifications
   const handleSubmitHomework = (taskId: string, taskTitle: string) => {
     if (!submissionText.trim() && !simulatedFileName) {
       setSubmitError("Harap tulis jawaban Anda terlebih dahulu atau lampirkan berkas tugas.");
       return;
     }
 
-    const newSubmission: Submission = {
-      id: `s-${Date.now()}`,
-      taskId,
-      taskTitle,
-      studentId: currentUser.id,
-      studentName: currentUser.name,
-      submittedAt: new Date().toISOString(),
-      content: submissionText.trim() || `[Mengirim lampiran berkas penugasan: ${simulatedFileName}]`,
-      fileName: simulatedFileName || `${currentUser.name.toLowerCase().replace(' ', '_')}_tugas.pdf`,
-      status: 'submitted'
-    };
-
-    onUpdateDb(prev => ({
-      ...prev,
-      submissions: [...prev.submissions, newSubmission]
-    }));
-
-    // Trigger notification to Guru
-    sendNotification(
-      "u-guru-1",
-      `Tugas Dikirim: ${currentUser.name}`,
-      `${currentUser.name} telah mengirimkan tugas untuk "${taskTitle}". Siap diperiksa.`,
-      'task'
-    );
-
-    setSubmissionText('');
-    setSimulatedFileName('');
     setSubmitError(null);
-    setExpandedTaskId(null);
+    setSubmissionStatus(prev => ({ ...prev, [taskId]: null }));
+    setSubmittingTaskId(taskId);
+    setSubmissionProgress(0);
+
+    // Simulated network upload intervals
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += 25;
+      setSubmissionProgress(progress);
+
+      if (progress >= 100) {
+        clearInterval(interval);
+
+        const isFailureSimulated = simulateFailure[taskId] || false;
+
+        if (isFailureSimulated) {
+          // Failure flow
+          setSubmissionStatus(prev => ({
+            ...prev,
+            [taskId]: {
+              success: false,
+              message: "Gagal Mengirim: Terjadi gangguan jaringan transmisi cloud DB. Berkas disimpan di draf lokal siswa!"
+            }
+          }));
+
+          // Send immediate system notification of failure to the Student themselves
+          sendNotification(
+            currentUser.id,
+            `⚠️ Gagal Mengirim Tugas`,
+            `Transmisi penugasan "${taskTitle}" terputus. Silakan nonaktifkan opsi kendala jaringan untuk mencoba kembali.`,
+            'announcement'
+          );
+
+          setSubmittingTaskId(null);
+          setSubmissionProgress(0);
+        } else {
+          // Success flow
+          const newSubmission: Submission = {
+            id: `s-${Date.now()}`,
+            taskId,
+            taskTitle,
+            studentId: currentUser.id,
+            studentName: currentUser.name,
+            submittedAt: new Date().toISOString(),
+            content: submissionText.trim() || `[Mengirim lampiran berkas penugasan: ${simulatedFileName}]`,
+            fileName: simulatedFileName || `${currentUser.name.toLowerCase().replace(' ', '_')}_tugas.pdf`,
+            status: 'submitted'
+          };
+
+          onUpdateDb(prev => ({
+            ...prev,
+            submissions: [...prev.submissions, newSubmission]
+          }));
+
+          // Trigger notification to Guru
+          sendNotification(
+            "u-guru-1",
+            `Tugas dikirim oleh ${currentUser.name}`,
+            `${currentUser.name} telah mengirimkan tugas untuk "${taskTitle}" ke database cloud.`,
+            'task'
+          );
+
+          // Trigger notification to Student themselves (Success notification)
+          sendNotification(
+            currentUser.id,
+            `✅ Tugas Berhasil Dikirim`,
+            `Tugas "${taskTitle}" Anda telah masuk ke sistem cloud Firestore dan siap dinilai.`,
+            'task'
+          );
+
+          setSubmissionStatus(prev => ({
+            ...prev,
+            [taskId]: {
+              success: true,
+              message: "Sukses! Tugas berhasil diunggah ke database dan notifikasi telah dikirim ke Guru."
+            }
+          }));
+
+          // Clean up form state
+          setSubmissionText('');
+          setSimulatedFileName('');
+          setSubmittingTaskId(null);
+          setSubmissionProgress(0);
+
+          // Close active card automatically after visual notification display
+          setTimeout(() => {
+            setExpandedTaskId(null);
+            setSubmissionStatus(prev => ({ ...prev, [taskId]: null }));
+          }, 3500);
+        }
+      }
+    }, 250);
   };
 
   // Compute grading average for student
@@ -354,8 +424,66 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                                   </label>
                                 </div>
 
+                                {/* Simulation of interactive delivery conditions (Success vs Network Failure) */}
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 bg-slate-100/70 rounded-xl border border-slate-200">
+                                  <div className="space-y-0.5 text-left">
+                                    <span className="block text-xs font-extrabold text-slate-700">Opsi Simulasi Pengiriman</span>
+                                    <span className="block text-[10px] text-slate-500">Pilih skenario untuk menguji status respons dan sistem notifikasi.</span>
+                                  </div>
+                                  <label className="flex items-center gap-2 cursor-pointer bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-xs">
+                                    <input 
+                                      type="checkbox" 
+                                      checked={simulateFailure[task.id] || false}
+                                      onChange={(e) => setSimulateFailure(prev => ({ ...prev, [task.id]: e.target.checked }))}
+                                      className="rounded border-slate-300 text-rose-600 focus:ring-rose-500 w-4 h-4 cursor-pointer"
+                                    />
+                                    <span className="text-xs font-extrabold text-rose-700">Simulasikan Gagal Kirim</span>
+                                  </label>
+                                </div>
+
+                                {/* Interactive Progress Bar */}
+                                {submittingTaskId === task.id && (
+                                  <div className="space-y-1.5 p-3.5 bg-blue-50/70 rounded-xl border border-blue-100 text-left">
+                                    <div className="flex justify-between text-xs font-extrabold text-blue-800">
+                                      <span className="flex items-center gap-1.5 animate-pulse">
+                                        <span className="animate-spin border-2 border-blue-800 border-t-transparent rounded-full w-3.5 h-3.5"></span>
+                                        Mengunggah berkas & mentransmisikan ke Firestore DB...
+                                      </span>
+                                      <span>{submissionProgress}%</span>
+                                    </div>
+                                    <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                                      <div 
+                                        className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                                        style={{ width: `${submissionProgress}%` }}
+                                      ></div>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Delivery Alerts / Notifications */}
+                                {submissionStatus[task.id] && (
+                                  <div className={`p-3.5 rounded-xl border text-xs font-bold leading-normal text-left flex items-start gap-2.5 ${
+                                    submissionStatus[task.id]?.success 
+                                      ? 'bg-emerald-50 border-emerald-200 text-emerald-800 shadow-xs' 
+                                      : 'bg-rose-50 border-rose-200 text-rose-900 shadow-xs'
+                                  }`}>
+                                    {submissionStatus[task.id]?.success ? (
+                                      <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                                    ) : (
+                                      <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                                    )}
+                                    <div>
+                                      <p className="font-extrabold">{submissionStatus[task.id]?.success ? "✅ BERHASIL DIKIRIM" : "⚠️ GAGAL DIKIRIM"}</p>
+                                      <p className="mt-0.5 font-semibold">{submissionStatus[task.id]?.message}</p>
+                                      {submissionStatus[task.id]?.success && (
+                                        <p className="text-[10px] font-medium text-emerald-600 mt-1">Sistem juga telah memperbarui tab Notifikasi Anda & dasbor Koreksi Guru.</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+
                                 {submitError && (
-                                  <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs font-semibold rounded-xl">
+                                  <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs font-semibold rounded-xl text-left">
                                     ⚠️ {submitError}
                                   </div>
                                 )}
@@ -364,9 +492,14 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                                   <button
                                     id={`btn-submit-${task.id}`}
                                     onClick={() => handleSubmitHomework(task.id, task.title)}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-sm cursor-pointer"
+                                    disabled={submittingTaskId !== null}
+                                    className={`text-xs font-bold px-5 py-2.5 rounded-xl shadow-sm cursor-pointer transition-all ${
+                                      submittingTaskId !== null 
+                                        ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                                        : 'bg-blue-600 hover:bg-blue-700 text-white active:scale-[0.98]'
+                                    }`}
                                   >
-                                    Kumpulkan Pekerjaan Rumah
+                                    {submittingTaskId === task.id ? `Mengirim (${submissionProgress}%)` : 'Kumpulkan Pekerjaan Rumah'}
                                   </button>
                                   <button
                                     onClick={() => setExpandedTaskId(null)}
