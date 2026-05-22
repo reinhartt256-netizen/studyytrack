@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, UserRole, DatabaseState, Task, Submission } from '../types';
+import { User, UserRole, DatabaseState, Task, Submission, Notification } from '../types';
 import { 
   ShieldCheck, User as UserIcon, Heart, BookOpen, 
   CheckCircle, BarChart3, Cloud, Layout, Cpu, Globe, ArrowRight, Check,
@@ -89,9 +89,46 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
       status: 'submitted'
     };
 
+    // Prepare live notifications for the Student, Teacher, and Parents!
+    const createdNotifs: Notification[] = [
+      {
+        id: `n-landing-student-${Date.now()}`,
+        userId: student.id,
+        title: `✅ Selesai Dikirim: ${task.title}`,
+        message: `Pekerjaan rumah Anda "${task.title}" telah diterima oleh sistem melalui pengumpulan cepat landing page. Status: Selesai Dikirim.`,
+        createdAt: new Date().toISOString(),
+        isRead: false,
+        type: 'task'
+      },
+      {
+        id: `n-landing-teacher-${Date.now()}`,
+        userId: "u-guru-1", // default teacher Budi
+        title: `Tugas Selesai Dikirim: ${student.name}`,
+        message: `${student.name} telah selesai mengirimkan tugas pelajaran "${task.title}" ke database cloud.`,
+        createdAt: new Date().toISOString(),
+        isRead: false,
+        type: 'task'
+      }
+    ];
+
+    // Find custom parents and append
+    const parent = db.users.find(u => u.role === 'orangtua' && u.studentId === student.id);
+    if (parent) {
+      createdNotifs.push({
+        id: `n-landing-parent-${Date.now()}`,
+        userId: parent.id,
+        title: `📋 Tugas Selesai Dikirim: ${student.name}`,
+        message: `Anak Anda, ${student.name}, telah selesai mengirimkan tugas "${task.title}" ke portal sekolah. Status: Selesai Dikirim.`,
+        createdAt: new Date().toISOString(),
+        isRead: false,
+        type: 'task'
+      });
+    }
+
     onUpdateDb(prev => ({
       ...prev,
-      submissions: [newSubmission, ...prev.submissions]
+      submissions: [newSubmission, ...prev.submissions],
+      notifications: [...createdNotifs, ...prev.notifications]
     }));
 
     setSubSuccess(true);

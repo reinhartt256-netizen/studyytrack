@@ -105,8 +105,8 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
           // Send immediate system notification of failure to the Student themselves
           sendNotification(
             currentUser.id,
-            `⚠️ Gagal Mengirim Tugas`,
-            `Transmisi penugasan "${taskTitle}" terputus. Silakan nonaktifkan opsi kendala jaringan untuk mencoba kembali.`,
+            `❌ Gagal Mengirim: ${taskTitle}`,
+            `Transmisi penugasan "${taskTitle}" terputus gara-gara kegagalan sistem simulasi jaringan. Silakan periksa koneksi Anda dan coba lagi.`,
             'announcement'
           );
 
@@ -134,18 +134,29 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
           // Trigger notification to Guru
           sendNotification(
             "u-guru-1",
-            `Tugas dikirim oleh ${currentUser.name}`,
-            `${currentUser.name} telah mengirimkan tugas untuk "${taskTitle}" ke database cloud.`,
+            `Tugas Selesai Dikirim: ${currentUser.name}`,
+            `${currentUser.name} telah selesai mengirimkan tugas pelajaran "${taskTitle}" ke database cloud.`,
             'task'
           );
 
           // Trigger notification to Student themselves (Success notification)
           sendNotification(
             currentUser.id,
-            `✅ Tugas Berhasil Dikirim`,
-            `Tugas "${taskTitle}" Anda telah masuk ke sistem cloud Firestore dan siap dinilai.`,
+            `✅ Selesai Dikirim: ${taskTitle}`,
+            `Pekerjaan rumah Anda untuk penugasan "${taskTitle}" telah berhasil diunggah dengan aman ke database cloud. Status: Selesai Dikirim.`,
             'task'
           );
+
+          // Find parents and notify
+          const parent = db.users.find(u => u.role === 'orangtua' && u.studentId === currentUser.id);
+          if (parent) {
+            sendNotification(
+              parent.id,
+              `📋 Tugas Selesai Dikirim: ${currentUser.name}`,
+              `Anak Anda, ${currentUser.name}, telah selesai mengirimkan tugas "${taskTitle}" ke portal sekolah. Status: Selesai Dikirim.`,
+              'task'
+            );
+          }
 
           setSubmissionStatus(prev => ({
             ...prev,
@@ -665,9 +676,18 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                   </div>
                 ) : (
                   myNotifications.map(notif => (
-                    <div key={notif.id} className="p-4 bg-white/45 backdrop-blur-sm border border-white/50 rounded-xl flex justify-between items-center gap-4 hover:border-slate-300 hover:bg-white/60 transition-all">
+                    <div 
+                      key={notif.id} 
+                      className={`p-4 backdrop-blur-sm border rounded-xl flex justify-between items-center gap-4 transition-all hover:bg-white/60 ${
+                        notif.title.includes('Selesai Dikirim') 
+                          ? 'bg-emerald-50/55 border-emerald-300/60 hover:border-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.06)]' 
+                          : notif.title.includes('Gagal') 
+                            ? 'bg-rose-50/55 border-rose-300/60 hover:border-rose-400 shadow-[0_0_8px_rgba(244,63,94,0.06)]' 
+                            : 'bg-white/45 border-white/50 hover:border-slate-300'
+                      }`}
+                    >
                       <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${
                             notif.type === 'grade' ? 'bg-emerald-100 text-emerald-800'
                               : notif.type === 'task' ? 'bg-blue-100 text-blue-800'
@@ -675,12 +695,27 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                           }`}>
                             {notif.type}
                           </span>
+                          
+                          {notif.title.includes('Selesai Dikirim') && (
+                            <span className="bg-emerald-600 text-white font-black px-2 py-0.5 rounded text-[9px] tracking-wider uppercase">
+                              Selesai Dikirim
+                            </span>
+                          )}
+
+                          {notif.title.includes('Gagal') && (
+                            <span className="bg-rose-600 text-white font-black px-2 py-0.5 rounded text-[9px] tracking-wider uppercase">
+                              Gagal Terkirim
+                            </span>
+                          )}
+
                           <span className="text-[10px] text-slate-400 font-mono">
                             {new Date(notif.createdAt).toLocaleTimeString('id-ID')}
                           </span>
                         </div>
-                        <h4 className="font-bold text-sm text-slate-800 mt-1">{notif.title}</h4>
-                        <p className="text-xs text-slate-500 mt-0.5">{notif.message}</p>
+                        <h4 className="font-extrabold text-sm text-slate-800 mt-1.5 flex items-center gap-1.5">
+                          {notif.title}
+                        </h4>
+                        <p className="text-xs text-slate-600 mt-1 leading-normal font-medium">{notif.message}</p>
                       </div>
                       
                       <button 
