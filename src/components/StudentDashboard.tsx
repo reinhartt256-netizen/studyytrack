@@ -200,8 +200,9 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
             setExpandedTaskId(null);
             setSubmissionStatus(prev => ({ ...prev, [taskId]: null }));
             
-            // Swap to "Selesai Dikirim" to provide reassurance of the uploaded file list
+            // Swap to "Selesai Dikirim" and redirect to general tasks list tab to provide reassurance
             setFilter('done');
+            setActiveTab('tugas');
           }, 3500);
         }
       }
